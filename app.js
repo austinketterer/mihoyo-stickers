@@ -1,7 +1,7 @@
 // Placeholder links for Signal Packs - User can replace these with the actual links after uploading
 const SIGNAL_LINKS = {
     hsr: {
-        vol1: "https://signal.art/addstickers/#pack_id_hsr_vol_1",
+        vol1: "https://signal.art/addstickers/#pack_id=e8682f4b6d22f6eb408ed11404bb781d&pack_key=9c9d1ca2e48cfca12444a2bbe292a96a2baa984b30237e70b48f1de5735b524c",
         vol2: "https://signal.art/addstickers/#pack_id_hsr_vol_2",
         vol3: "https://signal.art/addstickers/#pack_id_hsr_vol_3",
         vol4: "https://signal.art/addstickers/#pack_id_hsr_vol_4"
