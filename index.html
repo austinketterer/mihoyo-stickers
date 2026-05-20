@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Astral Stickers - Honkai: Star Rail Signal Sticker Hub</title>
+    <title>Mihoyo Stickers - Signal Sticker Hub</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -21,10 +21,10 @@
         </div>
         <div class="header-container">
             <div class="logo">
-                <span class="brand-text">ASTRAL STICKERS</span>
+                <span class="brand-text">MIHOYO STICKERS</span>
                 <span class="badge">Signal Edition</span>
             </div>
-            <p class="subtitle">Complete Honkai: Star Rail Emote Collection. Optimized, transparent, and ready with one-click installation.</p>
+            <p class="subtitle">Complete MiHoYo Emote Collections. Optimized, transparent, and ready with one-click installation.</p>
             
             <!-- Stats Dashboard -->
             <div class="stats-dashboard">
@@ -49,46 +49,31 @@
     </header>
 
     <main class="container">
-        <!-- Sticky Control & Filter Bar -->
+        <!-- Sticky Control Bar -->
         <div class="sticky-controls">
             <div class="controls-row">
-                <!-- Tabs -->
+                <!-- Game Tabs -->
                 <div class="tabs-container">
-                    <button class="tab-btn active" id="tab-signal">Signal Packs</button>
-                    <button class="tab-btn" id="tab-browse">Original Sets</button>
+                    <button class="tab-btn active" id="tab-hsr">Honkai: Star Rail</button>
+                    <button class="tab-btn" id="tab-genshin">Genshin Impact</button>
+                    <button class="tab-btn" id="tab-zzz">Zenless Zone Zero</button>
                 </div>
 
                 <!-- Search Section -->
                 <div class="search-container">
                     <div class="search-wrapper">
-                        <input type="text" id="search-input" placeholder="Search characters or packs...">
+                        <input type="text" id="search-input" placeholder="Search packs...">
                         <span class="search-icon">🔍</span>
                         <span class="search-shortcut">/</span>
                     </div>
                 </div>
             </div>
-
-            <!-- Character Quick Filter Tags -->
-            <div class="character-tags-container">
-                <span class="tags-label">Filter Character:</span>
-                <div class="tags-scroll" id="character-tags">
-                    <button class="tag-pill active" data-character="all">All Characters</button>
-                    <!-- Appended dynamically -->
-                </div>
-            </div>
         </div>
 
-        <!-- Consolidated Signal Packs View -->
-        <section id="signal-view" class="view-section active">
-            <div class="packs-grid" id="signal-packs-container">
-                <!-- Volume Cards will be inserted dynamically by JS -->
-            </div>
-        </section>
-
-        <!-- Browse View -->
-        <section id="browse-view" class="view-section">
-            <div class="packs-grid" id="original-packs-container">
-                <!-- Original Pack Cards will be inserted dynamically by JS -->
+        <!-- Big Batch Packs View -->
+        <section id="packs-view" class="view-section active">
+            <div class="packs-grid" id="packs-container">
+                <!-- Dynamic batch pack cards inserted by JS -->
             </div>
         </section>
 
@@ -111,7 +96,7 @@
                 <div class="step-card">
                     <div class="step-glow"></div>
                     <div class="step-num">03</div>
-                    <h3>Start Trailblazing</h3>
+                    <h3>Start Chatting</h3>
                     <p>Open any Signal chat, open the stickers menu, select your pack, and start sending emotes!</p>
                 </div>
             </div>
@@ -126,7 +111,7 @@
             <!-- Left Sidebar -->
             <div class="modal-sidebar">
                 <div class="modal-cover-wrapper">
-                    <img id="modal-cover" src="Signal_Packs/Consolidated_Packs/HSR_Vol_1/0_10113.png" alt="Pack Cover" onerror="this.src='https://raw.githubusercontent.com/Austin/Files/main/placeholder-cover.png'">
+                    <img id="modal-cover" src="" alt="Pack Cover">
                     <div class="cover-blur-bg" id="modal-cover-blur"></div>
                 </div>
                 <h2 id="modal-title">Pack Name</h2>

@@ -1,88 +1,157 @@
 // Placeholder links for Signal Packs - User can replace these with the actual links after uploading
 const SIGNAL_LINKS = {
-    vol1: "https://signal.art/addstickers/#pack_id_vol_1_placeholder",
-    vol2: "https://signal.art/addstickers/#pack_id_vol_2_placeholder",
-    vol3: "https://signal.art/addstickers/#pack_id_vol_3_placeholder",
-    vol4: "https://signal.art/addstickers/#pack_id_vol_4_placeholder"
+    hsr: {
+        vol1: "https://signal.art/addstickers/#pack_id_hsr_vol_1",
+        vol2: "https://signal.art/addstickers/#pack_id_hsr_vol_2",
+        vol3: "https://signal.art/addstickers/#pack_id_hsr_vol_3",
+        vol4: "https://signal.art/addstickers/#pack_id_hsr_vol_4"
+    },
+    genshin: {
+        vol1: "https://signal.art/addstickers/#pack_id_genshin_vol_1",
+        vol2: "https://signal.art/addstickers/#pack_id_genshin_vol_2",
+        vol3: "https://signal.art/addstickers/#pack_id_genshin_vol_3",
+        vol4: "https://signal.art/addstickers/#pack_id_genshin_vol_4",
+        vol5: "https://signal.art/addstickers/#pack_id_genshin_vol_5"
+    },
+    zzz: {
+        vol1: "https://signal.art/addstickers/#pack_id_zzz_vol_1",
+        vol2: "https://signal.art/addstickers/#pack_id_zzz_vol_2"
+    }
 };
 
-const POPULAR_CHARACTERS = [
-    "Pom-Pom", "March 7th", "Dan Heng", "Herta", "Acheron", 
-    "Firefly", "Robin", "Sparkle", "Kafka", "Silver Wolf", 
-    "Blade", "Himeko", "Welt", "Bronya", "Seele"
-];
+let hsrPacks = [];
+let hsrEmotesFlat = [];
+let genshinPacks = [];
+let genshinEmotesFlat = [];
+let zzzPacks = [];
+let zzzEmotesFlat = [];
 
-let allPacks = [];
-let allEmotesFlat = [];
+let emojiMappings = {};
 
 // Filtering state
 let searchQuery = '';
-let activeCharacterFilter = 'all';
+let activeGame = 'hsr'; // 'hsr', 'genshin', 'zzz'
 
 // Modal state
-let currentModalType = ''; // 'volume' or 'pack'
+let currentModalType = ''; // 'volume'
 let currentModalVolNum = null;
 let currentModalPackTitle = '';
 let currentModalEmotes = [];
 
+// Determine which game a pack belongs to
+function getPackGame(pack) {
+    const title = (pack.title || '').toLowerCase();
+    if (title.includes('pom-pom') || title.includes('star rail') || title.includes('trailblaze') || title.includes('hsr') || title.includes('warp center')) {
+        return 'hsr';
+    } else if (title.includes('paimon') || title.includes('genshin') || title.includes('traveler') || title.includes('paintings')) {
+        return 'genshin';
+    } else if (title.includes('zenless') || title.includes('zzz') || title.includes('sugar rush') || title.includes('new eridu') || title.includes('planet stamps')) {
+        return 'zzz';
+    }
+    return 'other';
+}
+
+// Determine which game an emote belongs to
+function getEmoteGame(emote) {
+    const title = (emote.packTitle || '').toLowerCase();
+    if (title.includes('pom-pom') || title.includes('star rail') || title.includes('trailblaze') || title.includes('hsr') || title.includes('warp center')) {
+        return 'hsr';
+    } else if (title.includes('paimon') || title.includes('genshin') || title.includes('traveler') || title.includes('paintings')) {
+        return 'genshin';
+    } else if (title.includes('zenless') || title.includes('zzz') || title.includes('sugar rush') || title.includes('new eridu') || title.includes('planet stamps')) {
+        return 'zzz';
+    }
+    return 'other';
+}
+
+// Return active flat list
+function getEmotesFlatForActiveGame() {
+    if (activeGame === 'hsr') return hsrEmotesFlat;
+    if (activeGame === 'genshin') return genshinEmotesFlat;
+    if (activeGame === 'zzz') return zzzEmotesFlat;
+    return [];
+}
+
+// Resolve Signal pack URL
+function getSignalLink(game, volNum) {
+    if (SIGNAL_LINKS[game] && SIGNAL_LINKS[game][`vol${volNum}`]) {
+        return SIGNAL_LINKS[game][`vol${volNum}`];
+    }
+    return `https://signal.art/addstickers/#pack_id_${game}_vol_${volNum}_placeholder`;
+}
+
 // Helper to get local sticker path from consolidated volumes
 function getStickerLocalPath(emote) {
-    const globalIndex = allEmotesFlat.findIndex(e => e.id === emote.id);
+    const game = getEmoteGame(emote);
+    let flatList = [];
+    let gameFolder = '';
+    
+    if (game === 'hsr') {
+        flatList = hsrEmotesFlat;
+        gameFolder = 'HSR';
+    } else if (game === 'genshin') {
+        flatList = genshinEmotesFlat;
+        gameFolder = 'Genshin';
+    } else if (game === 'zzz') {
+        flatList = zzzEmotesFlat;
+        gameFolder = 'ZZZ';
+    } else {
+        return emote.url; // fallback
+    }
+    
+    const globalIndex = flatList.findIndex(e => e.id === emote.id);
     if (globalIndex === -1) return emote.url; // fallback to HoYoLAB URL
     
     const volNum = Math.floor(globalIndex / 150) + 1;
     const volIndex = globalIndex % 150;
     const isGif = emote.url.split('?')[0].toLowerCase().endsWith('.gif');
     const ext = isGif ? '.webp' : '.png';
-    return `Signal_Packs/Consolidated_Packs/HSR_Vol_${volNum}/${volIndex}_${emote.id}_✨${ext}`;
+    const emoji = emojiMappings[emote.id] || "✨";
+    return `Signal_Packs/Consolidated_Packs/${gameFolder}_Vol_${volNum}/${volIndex}_${emote.id}_${emoji}${ext}`;
 }
 
 // Fetch and load metadata
 async function loadStickerHub() {
     try {
-        const response = await fetch('hsr_metadata.json');
-        allPacks = await response.json();
+        // Load emoji mappings
+        try {
+            const mappingsResponse = await fetch('emoji_mappings.json');
+            emojiMappings = await mappingsResponse.json();
+        } catch (err) {
+            console.warn("Could not load emoji mappings, falling back to default ✨:", err);
+        }
         
-        // Flatten all emotes to calculate volumes and local mapping
-        allPacks.forEach(pack => {
-            pack.emotes.forEach(emote => {
-                allEmotesFlat.push({
-                    ...emote,
-                    packTitle: pack.title
-                });
-            });
+        // Fetch metadata
+        const response = await fetch('emotes_metadata.json');
+        const packs = await response.json();
+        
+        // Categorize packs and flat emotes
+        packs.forEach(pack => {
+            const game = getPackGame(pack);
+            const flatEmotes = pack.emotes.map(emote => ({
+                ...emote,
+                packTitle: pack.title
+            }));
+            
+            if (game === 'hsr') {
+                hsrPacks.push(pack);
+                hsrEmotesFlat.push(...flatEmotes);
+            } else if (game === 'genshin') {
+                genshinPacks.push(pack);
+                genshinEmotesFlat.push(...flatEmotes);
+            } else if (game === 'zzz') {
+                zzzPacks.push(pack);
+                zzzEmotesFlat.push(...flatEmotes);
+            }
         });
 
         // Initialize features
         setupThemeSwitcher();
-        renderCharacterTags();
-        updateStatsDashboard();
         filterAllViews();
         setupEventListeners();
     } catch (err) {
         console.error("Error loading sticker data:", err);
     }
-}
-
-// Render dynamic stats counts
-function updateStatsDashboard() {
-    document.getElementById('stat-packs').textContent = allPacks.length;
-    document.getElementById('stat-stickers').textContent = allEmotesFlat.length;
-}
-
-// Render dynamic character filters
-function renderCharacterTags() {
-    const container = document.getElementById('character-tags');
-    // Keep 'All' tag, empty others
-    container.innerHTML = '<button class="tag-pill active" data-character="all">All Characters</button>';
-    
-    POPULAR_CHARACTERS.forEach(char => {
-        const btn = document.createElement('button');
-        btn.className = 'tag-pill';
-        btn.setAttribute('data-character', char.toLowerCase());
-        btn.textContent = char;
-        container.appendChild(btn);
-    });
 }
 
 // Configures mouse glow tracking on cards
@@ -99,35 +168,29 @@ function setupCardGlow(card) {
 // Central filtering controller
 function filterAllViews() {
     const query = searchQuery.toLowerCase().trim();
+    const flatList = getEmotesFlatForActiveGame();
     
-    // Filter Original Packs
-    const filteredOriginal = allPacks.filter(pack => {
-        const matchesSearch = !query || pack.title.toLowerCase().includes(query);
-        const matchesChar = activeCharacterFilter === 'all' || pack.title.toLowerCase().includes(activeCharacterFilter);
-        return matchesSearch && matchesChar;
-    });
-    renderOriginalPacks(filteredOriginal);
+    // Update stats
+    document.getElementById('stat-packs').textContent = Math.ceil(flatList.length / 150);
+    document.getElementById('stat-stickers').textContent = flatList.length;
     
-    // Filter & Render Consolidated Signal Volumes
     const volumeSize = 150;
-    const totalVolumes = Math.ceil(allEmotesFlat.length / volumeSize);
+    const totalVolumes = Math.ceil(flatList.length / volumeSize);
     
-    const container = document.getElementById('signal-packs-container');
+    const container = document.getElementById('packs-container');
     container.innerHTML = '';
     
     for (let i = 0; i < totalVolumes; i++) {
         const volNum = i + 1;
-        const volEmotes = allEmotesFlat.slice(i * volumeSize, (i + 1) * volumeSize);
+        const volEmotes = flatList.slice(i * volumeSize, (i + 1) * volumeSize);
         
         // Count matches within this volume
         const matchCount = volEmotes.filter(emote => {
-            const matchesSearch = !query || emote.packTitle.toLowerCase().includes(query);
-            const matchesChar = activeCharacterFilter === 'all' || emote.packTitle.toLowerCase().includes(activeCharacterFilter);
-            return matchesSearch && matchesChar;
+            return !query || emote.packTitle.toLowerCase().includes(query);
         }).length;
         
-        // Show volume cards if filter matches
-        if (matchCount > 0 || (activeCharacterFilter === 'all' && !query)) {
+        // Show volume cards if filter matches or no query
+        if (matchCount > 0 || !query) {
             renderSignalPackCard(volNum, volEmotes, matchCount);
         }
     }
@@ -135,9 +198,8 @@ function filterAllViews() {
 
 // Render a single Consolidated Signal Card
 function renderSignalPackCard(volNum, volEmotes, matchCount) {
-    const container = document.getElementById('signal-packs-container');
-    const linkKey = `vol${volNum}`;
-    const signalLink = SIGNAL_LINKS[linkKey] || '#';
+    const container = document.getElementById('packs-container');
+    const signalLink = getSignalLink(activeGame, volNum);
     
     const card = document.createElement('div');
     card.className = 'card';
@@ -145,22 +207,25 @@ function renderSignalPackCard(volNum, volEmotes, matchCount) {
     
     // Preview first 8 stickers mapped to consolidated path
     let previewHtml = '';
-    volEmotes.slice(0, 8).forEach((emote, idx) => {
-        const isGif = emote.url.split('?')[0].toLowerCase().endsWith('.gif');
-        const ext = isGif ? '.webp' : '.png';
-        const localPath = `Signal_Packs/Consolidated_Packs/HSR_Vol_${volNum}/${idx}_${emote.id}_✨${ext}`;
-        previewHtml += `<img class="preview-sticker" src="${localPath}" alt="Sticker" loading="lazy">`;
+    volEmotes.slice(0, 8).forEach((emote) => {
+        const localPath = getStickerLocalPath(emote);
+        previewHtml += `<img class="preview-sticker" src="${localPath}" alt="Sticker" loading="lazy" onerror="this.onerror=null; this.src='${emote.url}';">`;
     });
 
-    const isFiltered = activeCharacterFilter !== 'all' || searchQuery !== '';
+    const isFiltered = searchQuery !== '';
+    let gameTitle = '';
+    if (activeGame === 'hsr') gameTitle = 'HSR';
+    else if (activeGame === 'genshin') gameTitle = 'Genshin';
+    else if (activeGame === 'zzz') gameTitle = 'ZZZ';
+
     const badgeHtml = isFiltered 
         ? `<span class="badge">${matchCount} Matches</span>`
-        : `<span class="badge">Pack ${volNum}</span>`;
+        : `<span class="badge">${gameTitle} Vol. ${volNum}</span>`;
 
     card.innerHTML = `
         <div class="card-glow"></div>
         <div class="card-header">
-            <h3 class="card-title">Honkai: Star Rail Emotes Vol. ${volNum}</h3>
+            <h3 class="card-title">${gameTitle} Emotes Vol. ${volNum}</h3>
             <div class="card-meta">
                 ${badgeHtml}
                 <span>${volEmotes.length} Stickers</span>
@@ -183,86 +248,42 @@ function renderSignalPackCard(volNum, volEmotes, matchCount) {
     container.appendChild(card);
 }
 
-// Render Original Pack Grid
-function renderOriginalPacks(packsToRender) {
-    const container = document.getElementById('original-packs-container');
-    container.innerHTML = '';
-
-    if (packsToRender.length === 0) {
-        container.innerHTML = `<div class="no-results" style="grid-column: 1/-1; text-align: center; padding: 3rem; color: var(--text-secondary);">No packs found matching your search.</div>`;
-        return;
-    }
-
-    packsToRender.forEach((pack) => {
-        const card = document.createElement('div');
-        card.className = 'card';
-        setupCardGlow(card);
-        
-        let previewHtml = '';
-        pack.emotes.slice(0, 8).forEach(emote => {
-            const localPath = getStickerLocalPath(emote);
-            previewHtml += `<img class="preview-sticker" src="${localPath}" alt="Sticker" loading="lazy">`;
-        });
-
-        card.innerHTML = `
-            <div class="card-glow"></div>
-            <div class="card-header">
-                <h3 class="card-title">${pack.title}</h3>
-                <div class="card-meta">
-                    <span>${pack.emotes.length} Stickers</span>
-                </div>
-            </div>
-            <div class="card-preview">
-                ${previewHtml}
-            </div>
-            <div class="card-actions">
-                <button class="btn btn-secondary view-pack-btn" data-pack-id="${pack.title}">Browse Set</button>
-            </div>
-        `;
-        
-        container.appendChild(card);
-    });
-}
-
 // Setup Event Listeners
 function setupEventListeners() {
-    // Tabs toggles
-    const tabSignal = document.getElementById('tab-signal');
-    const tabBrowse = document.getElementById('tab-browse');
-    const signalView = document.getElementById('signal-view');
-    const browseView = document.getElementById('browse-view');
+    // Game Tabs toggles
+    const tabHsr = document.getElementById('tab-hsr');
+    const tabGenshin = document.getElementById('tab-genshin');
+    const tabZzz = document.getElementById('tab-zzz');
 
-    tabSignal.addEventListener('click', () => {
-        tabSignal.classList.add('active');
-        tabBrowse.classList.remove('active');
-        signalView.classList.add('active');
-        browseView.classList.remove('active');
+    tabHsr.addEventListener('click', () => {
+        switchGameTab('hsr');
+    });
+    tabGenshin.addEventListener('click', () => {
+        switchGameTab('genshin');
+    });
+    tabZzz.addEventListener('click', () => {
+        switchGameTab('zzz');
     });
 
-    tabBrowse.addEventListener('click', () => {
-        tabBrowse.classList.add('active');
-        tabSignal.classList.remove('active');
-        browseView.classList.add('active');
-        signalView.classList.remove('active');
-    });
+    function switchGameTab(game) {
+        activeGame = game;
+        
+        document.querySelectorAll('.tabs-container .tab-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        document.getElementById(`tab-${game}`).classList.add('active');
+        
+        // Reset search inside main view
+        document.getElementById('search-input').value = '';
+        searchQuery = '';
+        
+        filterAllViews();
+    }
 
-    // Search inputs
+    // Search input
     const searchInput = document.getElementById('search-input');
     searchInput.addEventListener('input', (e) => {
         searchQuery = e.target.value;
-        filterAllViews();
-    });
-
-    // Character filter pills click event
-    const tagsContainer = document.getElementById('character-tags');
-    tagsContainer.addEventListener('click', (e) => {
-        const tag = e.target.closest('.tag-pill');
-        if (!tag) return;
-        
-        tagsContainer.querySelectorAll('.tag-pill').forEach(btn => btn.classList.remove('active'));
-        tag.classList.add('active');
-        
-        activeCharacterFilter = tag.getAttribute('data-character');
         filterAllViews();
     });
 
@@ -317,17 +338,15 @@ function setupEventListeners() {
         if (e.target.classList.contains('view-vol-btn')) {
             const volNum = parseInt(e.target.getAttribute('data-vol'));
             openVolumeModal(volNum);
-        } else if (e.target.closest('.view-pack-btn')) {
-            const btn = e.target.closest('.view-pack-btn');
-            const packTitle = btn.getAttribute('data-pack-id');
-            openPackModal(packTitle);
         } else if (e.target.classList.contains('copy-btn')) {
             const url = e.target.getAttribute('data-url');
-            copyStickerToClipboard(url);
+            const fallbackUrl = e.target.getAttribute('data-fallback-url');
+            copyStickerToClipboard(url, fallbackUrl);
         } else if (e.target.classList.contains('download-btn')) {
             const url = e.target.getAttribute('data-url');
+            const fallbackUrl = e.target.getAttribute('data-fallback-url');
             const id = e.target.getAttribute('data-id');
-            downloadSticker(url, id);
+            downloadSticker(url, fallbackUrl, id);
         }
     });
 }
@@ -336,10 +355,17 @@ function setupEventListeners() {
 function openVolumeModal(volNum) {
     currentModalType = 'volume';
     currentModalVolNum = volNum;
-    currentModalPackTitle = `Honkai: Star Rail Emotes Volume ${volNum}`;
     
+    const flatList = getEmotesFlatForActiveGame();
     const volumeSize = 150;
-    currentModalEmotes = allEmotesFlat.slice((volNum - 1) * volumeSize, volNum * volumeSize);
+    currentModalEmotes = flatList.slice((volNum - 1) * volumeSize, volNum * volumeSize);
+    
+    let gameTitle = '';
+    if (activeGame === 'hsr') gameTitle = 'Honkai: Star Rail';
+    else if (activeGame === 'genshin') gameTitle = 'Genshin Impact';
+    else if (activeGame === 'zzz') gameTitle = 'Zenless Zone Zero';
+    
+    currentModalPackTitle = `${gameTitle} Emotes Volume ${volNum}`;
     
     const modal = document.getElementById('pack-modal');
     document.getElementById('modal-title').textContent = currentModalPackTitle;
@@ -350,52 +376,9 @@ function openVolumeModal(volNum) {
     typeBadge.className = "modal-badge type-badge";
     
     const actionBtn = document.getElementById('modal-action-btn');
-    const linkKey = `vol${volNum}`;
-    actionBtn.href = SIGNAL_LINKS[linkKey] || '#';
+    actionBtn.href = getSignalLink(activeGame, volNum);
     actionBtn.style.display = 'block';
     actionBtn.textContent = 'Add to Signal';
-    
-    // Set Sidebar Cover Details
-    const coverImg = document.getElementById('modal-cover');
-    const coverBlur = document.getElementById('modal-cover-blur');
-    const firstEmote = currentModalEmotes[0];
-    const isGif = firstEmote.url.split('?')[0].toLowerCase().endsWith('.gif');
-    const ext = isGif ? '.webp' : '.png';
-    const localCover = `Signal_Packs/Consolidated_Packs/HSR_Vol_${volNum}/0_${firstEmote.id}_✨${ext}`;
-    
-    coverImg.src = localCover;
-    coverBlur.style.backgroundImage = `url('${localCover}')`;
-    
-    // Clear search inside modal
-    document.getElementById('modal-search-input').value = '';
-    
-    renderModalGallery(currentModalEmotes);
-    modal.classList.add('active');
-}
-
-// Open modal for Original Sets
-function openPackModal(packTitle) {
-    const pack = allPacks.find(p => p.title === packTitle);
-    if (!pack) return;
-
-    currentModalType = 'pack';
-    currentModalVolNum = null;
-    currentModalPackTitle = pack.title;
-    currentModalEmotes = pack.emotes.map(e => ({
-        ...e,
-        packTitle: pack.title
-    }));
-    
-    const modal = document.getElementById('pack-modal');
-    document.getElementById('modal-title').textContent = currentModalPackTitle;
-    document.getElementById('modal-sticker-count').textContent = `${currentModalEmotes.length} Stickers`;
-    
-    const typeBadge = document.getElementById('modal-pack-type');
-    typeBadge.textContent = "Original Set";
-    typeBadge.className = "modal-badge";
-    
-    const actionBtn = document.getElementById('modal-action-btn');
-    actionBtn.style.display = 'none';
     
     // Set Sidebar Cover Details
     const coverImg = document.getElementById('modal-cover');
@@ -404,6 +387,10 @@ function openPackModal(packTitle) {
     const localCover = getStickerLocalPath(firstEmote);
     
     coverImg.src = localCover;
+    coverImg.onerror = () => {
+        coverImg.onerror = null;
+        coverImg.src = firstEmote.url;
+    };
     coverBlur.style.backgroundImage = `url('${localCover}')`;
     
     // Clear search inside modal
@@ -424,23 +411,15 @@ function renderModalGallery(emotesToRender) {
     }
     
     emotesToRender.forEach((emote) => {
-        let localPath = '';
-        if (currentModalType === 'volume') {
-            const idxInVol = currentModalEmotes.findIndex(e => e.id === emote.id);
-            const isGif = emote.url.split('?')[0].toLowerCase().endsWith('.gif');
-            const ext = isGif ? '.webp' : '.png';
-            localPath = `Signal_Packs/Consolidated_Packs/HSR_Vol_${currentModalVolNum}/${idxInVol}_${emote.id}_✨${ext}`;
-        } else {
-            localPath = getStickerLocalPath(emote);
-        }
+        const localPath = getStickerLocalPath(emote);
         
         const item = document.createElement('div');
         item.className = 'gallery-item';
         item.innerHTML = `
-            <img src="${localPath}" alt="Sticker Preview" title="Original Set: ${emote.packTitle || ''}" loading="lazy" onerror="this.src='${emote.url}'">
+            <img src="${localPath}" alt="Sticker Preview" title="Original Set: ${emote.packTitle || ''}" loading="lazy" onerror="this.onerror=null; this.src='${emote.url}';">
             <div class="gallery-item-actions">
-                <button class="gallery-action-btn copy-btn" data-url="${localPath}">Copy</button>
-                <button class="gallery-action-btn download-btn" data-url="${localPath}" data-id="${emote.id}">Download</button>
+                <button class="gallery-action-btn copy-btn" data-url="${localPath}" data-fallback-url="${emote.url}">Copy</button>
+                <button class="gallery-action-btn download-btn" data-url="${localPath}" data-fallback-url="${emote.url}" data-id="${emote.id}">Download</button>
             </div>
         `;
         gallery.appendChild(item);
@@ -479,11 +458,17 @@ function setTheme(themeName) {
 }
 
 // Copy sticker image directly to system clipboard
-async function copyStickerToClipboard(url) {
+async function copyStickerToClipboard(url, fallbackUrl) {
     try {
-        const response = await fetch(url);
-        const blob = await response.blob();
+        let response;
+        try {
+            response = await fetch(url);
+            if (!response.ok) throw new Error("Local file not found");
+        } catch (localErr) {
+            response = await fetch(fallbackUrl);
+        }
         
+        const blob = await response.blob();
         await navigator.clipboard.write([
             new ClipboardItem({
                 [blob.type]: blob
@@ -493,8 +478,7 @@ async function copyStickerToClipboard(url) {
     } catch (err) {
         console.warn("Failed to copy image blob, trying text URL link:", err);
         try {
-            const absoluteUrl = new URL(url, window.location.href).href;
-            await navigator.clipboard.writeText(absoluteUrl);
+            await navigator.clipboard.writeText(fallbackUrl);
             showToast("🔗 Image URL link copied!");
         } catch (e) {
             showToast("❌ Clipboard copy failed");
@@ -503,14 +487,28 @@ async function copyStickerToClipboard(url) {
 }
 
 // Download single sticker PNG/WebP file
-function downloadSticker(url, id) {
+function downloadSticker(url, fallbackUrl, id) {
     const a = document.createElement('a');
-    a.href = url;
-    a.download = `hsr_sticker_${id}`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    showToast("💾 Sticker downloaded!");
+    fetch(url)
+        .then(res => {
+            if (!res.ok) return fetch(fallbackUrl);
+            return res;
+        })
+        .then(res => res.blob())
+        .then(blob => {
+            const blobUrl = URL.createObjectURL(blob);
+            a.href = blobUrl;
+            a.download = `${activeGame}_sticker_${id}.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(blobUrl);
+            showToast("💾 Sticker downloaded!");
+        })
+        .catch(err => {
+            console.error("Download failed:", err);
+            showToast("❌ Download failed");
+        });
 }
 
 // Custom Toast notification popup
