@@ -1,74 +1,53 @@
 /**
  * Signal Desktop Sticker Auto-Emoji Assigner
  * 
+ * Target Pack: HSR_Vol_1 (150 stickers)
+ * 
  * Instructions:
  * 1. Open Signal Desktop, go to File > Create/upload sticker pack.
- * 2. Drag & drop the HSR_Vol_1 folder (or any compiled folder).
- * 3. Once they load, press Ctrl + Shift + I to open Developer Tools.
- * 4. In DevTools, click the dropdown next to the word "top" (JavaScript Context)
+ * 2. Drag & drop the 'HSR_Vol_1' folder.
+ * 3. Click "Next" to go to the "Choose Emojis" screen.
+ * 4. Once there, press Ctrl + Shift + I to open Developer Tools.
+ * 5. In DevTools, click the dropdown next to the word "top" (JavaScript Context)
  *    and select "Electron Isolated Context".
- * 5. Paste this entire script into the console and press Enter!
+ * 6. Paste this entire script into the console and press Enter!
  */
 
 (async () => {
-    // Delay helper
     const delay = ms => new Promise(res => setTimeout(res, ms));
 
-    // 1. Locate all sticker items (independent of randomized classnames)
-    function getStickerItems() {
-        const list = [];
-        const imgs = document.querySelectorAll('img');
-        
-        imgs.forEach(img => {
-            if (img.src && img.src.startsWith('file://')) {
-                // Find the parent container that has a button
-                let parent = img.parentElement;
-                while (parent && !parent.querySelector('button')) {
-                    parent = parent.parentElement;
-                }
-                if (parent) {
-                    const btn = parent.querySelector('button');
-                    list.push({ img, btn });
-                }
-            }
-        });
-        return list;
+    // Hardcoded emoji list matching the folder's files in order
+    const emojis = ["😠", "😫", "😎", "🎨", "👍", "🤔", "😎", "🔥", "😰", "😄", "😡", "🧑‍🍳", "🤔", "😩", "🤔", "😮", "👍", "😤", "😊", "😊", "😭", "😏", "😊", "😉", "😋", "🥳", "🎶", "😩", "😭", "📸", "💡", "😴", "🥰", "👋", "🤑", "🥳", " exasperated", "🥺", "🤩", "🦋", "😜", "🎶", "😡", "🤔", "😁", "🕯️", "😉", "😏", "🤔", "😔", "😉", "😟", "😴", "😎", "😭", "🥰", "😉", "🤨", "😊", "😉", "😊", "🧐", "😩", "😤", "😏", "🥰", "😄", "😮", "😮", "😠", "🥺", "😻", "🤔", "😊", "😅", "😋", "😭", "😊", "😳", "🤔", "😭", "💪", "😴", "😮", "😢", "👋", "🤫", "😡", "🤔", "😒", "😉", "😢", "😊", "😊", "😔", "😏", "😄", "😉", "😉", "🥰", "🥺", "😳", "😮", "😠", "🥺", "👍", "😉", "😭", "✌️", "😉", "😊", "😅", "😮", "😴", "✨", "😩", "😖", "😔", "🥱", "😏", "🤔", "🥰", "😔", "😠", "👍", "❓", "✨", "🤩", "😠", "😴", "😉", "😌", "😒", "😤", "✍️", "🤔", "💰", "🤔", "😨", "👊", "😡", "🥰", "🤔", "😩", "😭", "👋", "🙏", "🚶", "🕰️", "🗑️"];
+
+    // Get all emoji trigger buttons on the page
+    const buttons = Array.from(document.querySelectorAll('button')).filter(btn => {
+        return btn.className.includes('_emoji-button_');
+    });
+
+    console.log(`%cFound ${buttons.length} emoji buttons in Signal Creator. Target emojis count: ${emojis.length}`, 'color: #00ff00; font-weight: bold;');
+
+    if (buttons.length === 0) {
+        console.error("No emoji buttons found! Are you on the 'Choose Emojis' screen?");
+        return;
     }
 
-    // 2. Extract emoji from local filename
-    function extractEmoji(src) {
-        try {
-            const decoded = decodeURIComponent(src);
-            const filename = decoded.substring(decoded.lastIndexOf('/') + 1);
-            const parts = filename.split('_');
-            if (parts.length < 2) return null;
-            
-            // Get string after last underscore and remove file extension
-            const emojiPart = parts[parts.length - 1].split('.')[0];
-            return emojiPart.trim();
-        } catch (e) {
-            return null;
-        }
-    }
+    const limit = Math.min(buttons.length, emojis.length);
 
-    const items = getStickerItems();
-    console.log(`%cFound ${items.length} stickers in Signal Creator. Starting mapping...`, 'color: #00ff00; font-weight: bold;');
+    for (let i = 0; i < limit; i++) {
+        const btn = buttons[i];
+        const emoji = emojis[i];
 
-    for (let i = 0; i < items.length; i++) {
-        const item = items[i];
-        const emoji = extractEmoji(item.img.src);
-
-        // Skip default/sparkle emojis
-        if (!emoji || emoji === "✨" || emoji === "star") {
-            console.log(`[${i + 1}/${items.length}] Skipping default sparkle or invalid emoji.`);
+        // Skip default/sparkle/unset emojis
+        if (!emoji || emoji === "✨") {
+            console.log(`[${i + 1}/${limit}] Skipping default sparkle.`);
             continue;
         }
 
-        console.log(`[${i + 1}/${items.length}] Mapping to emoji: ${emoji}`);
+        console.log(`[${i + 1}/${limit}] Mapping to emoji: ${emoji}`);
 
         // Open the emoji picker for this sticker
-        item.btn.click();
-        await delay(150); // Wait for picker popover to open
+        btn.click();
+        await delay(120); // Wait for picker to open
 
         let clicked = false;
 
@@ -88,7 +67,7 @@
             if (searchInput) {
                 searchInput.value = emoji;
                 searchInput.dispatchEvent(new Event('input', { bubbles: true }));
-                await delay(200); // Wait for search results to load
+                await delay(150); // Wait for search results to load
 
                 // Click the first result
                 const firstResult = document.querySelector('[role="option"], .emoji-button, button[class*="emoji"]');
@@ -100,12 +79,11 @@
         }
 
         if (!clicked) {
-            console.warn(`[${i + 1}/${items.length}] Could not auto-click "${emoji}". Closing picker.`);
-            // Click the button again to close the picker so it doesn't block the next one
-            item.btn.click();
+            console.warn(`[${i + 1}/${limit}] Could not select emoji "${emoji}". Closing picker.`);
+            btn.click(); // Click again to close picker
         }
 
-        await delay(150); // Pause before next sticker
+        await delay(120); // Pause before next sticker
     }
 
     console.log("%cAuto-mapping completed!", "color: #00ff00; font-weight: bold; font-size: 14px;");
