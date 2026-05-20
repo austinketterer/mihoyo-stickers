@@ -209,8 +209,10 @@ def main():
         print(f"Error: Unknown game '{game}'. Choose hsr, genshin, or zzz.")
         sys.exit(1)
         
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    base_dir = os.path.dirname(script_dir)
     folder_name = f"{game_folders[game]}_Vol_{vol_num}"
-    dir_path = os.path.join("Signal_Packs", "Consolidated_Packs", folder_name)
+    dir_path = os.path.join(base_dir, "Signal_Packs", "Consolidated_Packs", folder_name)
     
     if not os.path.isdir(dir_path):
         print(f"Error: Directory '{dir_path}' does not exist.")
@@ -243,7 +245,7 @@ def main():
     js_content = js_content.replace("__EMOJIS_COUNT__", str(len(files)))
     js_content = js_content.replace("__EMOJIS_ARRAY__", json.dumps(emojis, ensure_ascii=False))
 
-    output_path = "auto_emoji_helper.js"
+    output_path = os.path.join(base_dir, "auto_emoji_helper.js")
     try:
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(js_content)

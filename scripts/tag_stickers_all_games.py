@@ -10,9 +10,9 @@ import urllib.error
 sys.stdout.reconfigure(encoding='utf-8')
 
 API_KEY = "AIzaSyDD6J5y67lnXBPrV95W-_M7Tn8MLm3zlcs"
-BASE_DIR = r"c:\Users\Austin\Documents\Antigravity\filesystem cleanup\mihoyo-stickers"
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONSOLIDATED_DIR = os.path.join(BASE_DIR, "Signal_Packs", "Consolidated_Packs")
-MAPPINGS_FILE = os.path.join(BASE_DIR, "emoji_mappings.json")
+MAPPINGS_FILE = os.path.join(BASE_DIR, "data", "emoji_mappings.json")
 
 def analyze_batch(file_paths):
     url = f"https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash-lite:generateContent?key={API_KEY}"

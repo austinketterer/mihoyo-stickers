@@ -108,14 +108,14 @@ async function loadStickerHub() {
     try {
         // Load emoji mappings
         try {
-            const mappingsResponse = await fetch('emoji_mappings.json');
+            const mappingsResponse = await fetch('data/emoji_mappings.json');
             emojiMappings = await mappingsResponse.json();
         } catch (err) {
             console.warn("Could not load emoji mappings, falling back to default ✨:", err);
         }
         
         // Fetch metadata
-        const response = await fetch('emotes_metadata.json');
+        const response = await fetch('data/emotes_metadata.json');
         const packs = await response.json();
         
         // Categorize packs and flat emotes

@@ -1,9 +1,13 @@
 import os
 import re
+import sys
 import json
+import argparse
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from PIL import Image, ImageSequence
+
+sys.stdout.reconfigure(encoding='utf-8')
 
 def sanitize_filename(name):
     return re.sub(r'[\\/*?:"<>|]', "", name).strip()
@@ -63,10 +67,14 @@ def process_gif_to_webp(in_data, save_path, target_size=(512, 512)):
         process_static_image(in_data, save_path.replace(".webp", ".png"), target_size)
         return
  
+    # Try a sequence of configurations to find the best quality under 300KB
     configs = [
         (512, 80, 4),
-        (384, 75, 4),
-        (256, 70, 4)
+        (512, 80, 6),
+        (512, 60, 6),
+        (384, 70, 6),
+        (256, 60, 6),
+        (256, 40, 6)
     ]
 
     for res, qual, meth in configs:
@@ -91,19 +99,17 @@ def download_and_process(url, save_path, is_gif=False):
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     }
     
-    # Check if already exists (with any suffix, just checking if processed)
-    # The file could be renamed, e.g. Y_ID_emoji.png, so we check if any file in the folder ends with _ID_emoji.ext
-    # Or for simplicity, check if the specific save_path or its variants exist.
+    # Check if file has already been downloaded (handles emoji-renamed files)
     dir_name = os.path.dirname(save_path)
     base_name = os.path.basename(save_path)
-    # filename is idx_id_✨.ext
     name_parts = os.path.splitext(base_name)[0].split("_")
+    
     if len(name_parts) >= 2:
         idx, emote_id = name_parts[0], name_parts[1]
         if os.path.exists(dir_name):
             for existing in os.listdir(dir_name):
+                # Match e.g., "0_1234_✨.png" or "0_1234_😭.png"
                 if f"_{emote_id}_" in existing or existing.startswith(f"{idx}_{emote_id}"):
-                    # Already exists and processed!
                     return True
                     
     if os.path.exists(save_path) and os.path.getsize(save_path) <= 300 * 1024:
@@ -151,43 +157,78 @@ def get_pack_game(title):
     return 'other'
 
 def main():
-    metadata_path = r"c:\Users\Austin\Documents\Antigravity\filesystem cleanup\mihoyo-stickers\emotes_metadata.json"
-    output_base = r"c:\Users\Austin\Documents\Antigravity\filesystem cleanup\mihoyo-stickers\Signal_Packs\Consolidated_Packs"
+    parser = argparse.ArgumentParser(description="Download and process MiHoYo emotes for Signal.")
+    parser.add_argument("--game", choices=["hsr", "genshin", "zzz", "all"], default="all",
+                        help="The game emotes to process (default: all)")
+    parser.add_argument("--type", choices=["consolidated", "original", "both"], default="consolidated",
+                        help="Output format: consolidated volumes, original packs, or both (default: consolidated)")
+    args = parser.parse_args()
     
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    base_dir = os.path.dirname(script_dir)
+    metadata_path = os.path.join(base_dir, "data", "emotes_metadata.json")
+    output_base = os.path.join(base_dir, "Signal_Packs")
+    
+    if not os.path.exists(metadata_path):
+        print(f"Error: Metadata file not found at {metadata_path}")
+        return
+        
     with open(metadata_path, "r", encoding="utf-8") as f:
         packs = json.load(f)
         
     game_emotes = {'hsr': [], 'genshin': [], 'zzz': []}
+    game_packs = {'hsr': [], 'genshin': [], 'zzz': []}
     
     for p in packs:
         game = get_pack_game(p['title'])
         if game in game_emotes:
+            game_packs[game].append(p)
             for emote in p['emotes']:
                 game_emotes[game].append(emote)
                 
-    print(f"Loaded emotes: HSR={len(game_emotes['hsr'])}, Genshin={len(game_emotes['genshin'])}, ZZZ={len(game_emotes['zzz'])}")
+    # Select which games to process based on argument
+    target_games = ['hsr', 'genshin', 'zzz'] if args.game == 'all' else [args.game]
     
     tasks = []
-    # Build list of download tasks for Genshin and ZZZ (HSR is already processed)
-    for game in ['genshin', 'zzz']:
+    
+    for game in target_games:
         emotes = game_emotes[game]
-        game_folder_prefix = 'Genshin' if game == 'genshin' else 'ZZZ'
+        packs_list = game_packs[game]
+        game_folder_prefix = game.upper()
         
-        for idx, emote in enumerate(emotes):
-            volume_num = (idx // 150) + 1
-            volume_folder = os.path.join(output_base, f"{game_folder_prefix}_Vol_{volume_num}")
-            
-            url = emote["url"]
-            is_gif = ".gif" in url.split("?")[0].lower()
-            ext = ".webp" if is_gif else ".png"
-            filename = f"{idx % 150}_{emote['id']}_✨{ext}"
-            save_path = os.path.join(volume_folder, filename)
-            tasks.append((url, save_path, is_gif))
-            
-    print(f"Total new stickers to process (Genshin + ZZZ): {len(tasks)}")
+        print(f"Found {len(emotes)} emotes in {len(packs_list)} packs for {game.upper()}.")
+        
+        # 1. Prepare Original Packs if selected
+        if args.type in ["original", "both"]:
+            original_base = os.path.join(output_base, "Original_Packs")
+            for pack in packs_list:
+                title = sanitize_filename(pack["title"])
+                pack_folder = os.path.join(original_base, title)
+                for emote in pack["emotes"]:
+                    url = emote["url"]
+                    is_gif = ".gif" in url.split("?")[0].lower()
+                    ext = ".webp" if is_gif else ".png"
+                    filename = f"{emote['sort']}_{emote['id']}{ext}"
+                    save_path = os.path.join(pack_folder, filename)
+                    tasks.append((url, save_path, is_gif))
+                    
+        # 2. Prepare Consolidated Packs if selected
+        if args.type in ["consolidated", "both"]:
+            consolidated_base = os.path.join(output_base, "Consolidated_Packs")
+            for idx, emote in enumerate(emotes):
+                volume_num = (idx // 150) + 1
+                volume_folder = os.path.join(consolidated_base, f"{game_folder_prefix}_Vol_{volume_num}")
+                url = emote["url"]
+                is_gif = ".gif" in url.split("?")[0].lower()
+                ext = ".webp" if is_gif else ".png"
+                filename = f"{idx % 150}_{emote['id']}_✨{ext}"
+                save_path = os.path.join(volume_folder, filename)
+                tasks.append((url, save_path, is_gif))
+                
+    print(f"Total downloads/processes to schedule: {len(tasks)}")
     
     if len(tasks) == 0:
-        print("No new stickers to process.")
+        print("No tasks to run.")
         return
         
     success = 0
@@ -197,7 +238,7 @@ def main():
             if future.result():
                 success += 1
             if (i+1) % 100 == 0:
-                print(f"Progress: {i+1}/{len(tasks)} processed...")
+                print(f"Progress: {i+1}/{len(tasks)} items processed...")
                 
     print(f"Done! Successfully processed {success}/{len(tasks)} files.")
 
