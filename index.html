@@ -14,27 +14,67 @@
     <div class="twinkling"></div>
 
     <header>
+        <div class="theme-switcher-container">
+            <button class="theme-btn active" data-theme="express" title="Astral Express Theme">🚂 Express</button>
+            <button class="theme-btn" data-theme="luofu" title="Xianzhou Luofu Theme">🏮 Luofu</button>
+            <button class="theme-btn" data-theme="acheron" title="Acheron Void Theme">🔮 Void</button>
+        </div>
         <div class="header-container">
             <div class="logo">
                 <span class="brand-text">ASTRAL STICKERS</span>
                 <span class="badge">Signal Edition</span>
             </div>
             <p class="subtitle">Complete Honkai: Star Rail Emote Collection. Optimized, transparent, and ready with one-click installation.</p>
+            
+            <!-- Stats Dashboard -->
+            <div class="stats-dashboard">
+                <div class="stat-item">
+                    <span class="stat-value" id="stat-packs">-</span>
+                    <span class="stat-label">Packs</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="stat-stickers">-</span>
+                    <span class="stat-label">Stickers</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value">WebP/PNG</span>
+                    <span class="stat-label">Optimized</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value">1-Click</span>
+                    <span class="stat-label">Signal Install</span>
+                </div>
+            </div>
         </div>
     </header>
 
     <main class="container">
-        <!-- Tabs -->
-        <div class="tabs-container">
-            <button class="tab-btn active" id="tab-signal">Signal Sticker Packs</button>
-            <button class="tab-btn" id="tab-browse">Explore Original Sets</button>
-        </div>
+        <!-- Sticky Control & Filter Bar -->
+        <div class="sticky-controls">
+            <div class="controls-row">
+                <!-- Tabs -->
+                <div class="tabs-container">
+                    <button class="tab-btn active" id="tab-signal">Signal Packs</button>
+                    <button class="tab-btn" id="tab-browse">Original Sets</button>
+                </div>
 
-        <!-- Search Section -->
-        <div class="search-container">
-            <div class="search-wrapper">
-                <input type="text" id="search-input" placeholder="Search by character or pack name (e.g. March 7th, Pom-Pom)...">
-                <span class="search-icon">🔍</span>
+                <!-- Search Section -->
+                <div class="search-container">
+                    <div class="search-wrapper">
+                        <input type="text" id="search-input" placeholder="Search characters or packs...">
+                        <span class="search-icon">🔍</span>
+                        <span class="search-shortcut">/</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Character Quick Filter Tags -->
+            <div class="character-tags-container">
+                <span class="tags-label">Filter Character:</span>
+                <div class="tags-scroll" id="character-tags">
+                    <button class="tag-pill active" data-character="all">All Characters</button>
+                    <!-- Appended dynamically -->
+                </div>
             </div>
         </div>
 
@@ -51,22 +91,71 @@
                 <!-- Original Pack Cards will be inserted dynamically by JS -->
             </div>
         </section>
+
+        <!-- Onboarding / FAQ Section -->
+        <section class="onboarding-section" id="onboarding-section">
+            <h2 class="section-title">How to Install & Use</h2>
+            <div class="steps-grid">
+                <div class="step-card">
+                    <div class="step-glow"></div>
+                    <div class="step-num">01</div>
+                    <h3>Get Signal App</h3>
+                    <p>Ensure the official Signal messenger is installed on your mobile phone or desktop client.</p>
+                </div>
+                <div class="step-card">
+                    <div class="step-glow"></div>
+                    <div class="step-num">02</div>
+                    <h3>Add Sticker Pack</h3>
+                    <p>Click the <strong>Add to Signal</strong> button on any consolidated pack. It redirects to Signal to import.</p>
+                </div>
+                <div class="step-card">
+                    <div class="step-glow"></div>
+                    <div class="step-num">03</div>
+                    <h3>Start Trailblazing</h3>
+                    <p>Open any Signal chat, open the stickers menu, select your pack, and start sending emotes!</p>
+                </div>
+            </div>
+        </section>
     </main>
 
-    <!-- Pack Detail Modal -->
+    <!-- Pack Detail Modal (Split-Pane layout) -->
     <div class="modal" id="pack-modal">
-        <div class="modal-content">
+        <div class="modal-content split-pane">
             <span class="close-btn" id="close-modal">&times;</span>
-            <h2 id="modal-title">Pack Name</h2>
-            <div class="modal-info">
-                <span class="modal-badge" id="modal-sticker-count">0 Stickers</span>
-                <a href="#" class="modal-action-btn" id="modal-action-btn" target="_blank">Add to Signal</a>
+            
+            <!-- Left Sidebar -->
+            <div class="modal-sidebar">
+                <div class="modal-cover-wrapper">
+                    <img id="modal-cover" src="Signal_Packs/Consolidated_Packs/HSR_Vol_1/0_10113.png" alt="Pack Cover" onerror="this.src='https://raw.githubusercontent.com/Austin/Files/main/placeholder-cover.png'">
+                    <div class="cover-blur-bg" id="modal-cover-blur"></div>
+                </div>
+                <h2 id="modal-title">Pack Name</h2>
+                <div class="modal-info-sidebar">
+                    <span class="modal-badge" id="modal-sticker-count">0 Stickers</span>
+                    <span class="modal-badge type-badge" id="modal-pack-type">Signal Pack</span>
+                </div>
+                <div class="modal-actions-sidebar">
+                    <a href="#" class="modal-action-btn" id="modal-action-btn" target="_blank">Add to Signal</a>
+                </div>
             </div>
-            <div class="stickers-gallery" id="modal-stickers-grid">
-                <!-- Sticker items -->
+            
+            <!-- Right Content Area -->
+            <div class="modal-gallery-pane">
+                <div class="modal-gallery-header">
+                    <div class="modal-search-wrapper">
+                        <input type="text" id="modal-search-input" placeholder="Search stickers in this pack...">
+                        <span class="modal-search-icon">🔍</span>
+                    </div>
+                </div>
+                <div class="stickers-gallery" id="modal-stickers-grid">
+                    <!-- Sticker items dynamic insertion -->
+                </div>
             </div>
         </div>
     </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container"></div>
 
     <footer>
         <p>This is a community fan project. All art assets belong to HoYoverse (MiHoYo).</p>
