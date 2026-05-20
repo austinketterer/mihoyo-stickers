@@ -17,7 +17,6 @@
     const delay = ms => new Promise(res => setTimeout(res, ms));
 
     // CHANGE THIS NUMBER if you dragged from a file other than 0!
-    // (e.g. if the first sticker shown on screen is 81_..., set this to 81)
     const offset = 0; 
 
     // Hardcoded emoji list matching the folder's files in order
@@ -42,6 +41,11 @@
 
     console.log(`Using offset: ${offset}. Rotating emojis array...`);
 
+    // Helper to detect if picker is currently open
+    const isPickerOpen = () => {
+        return !!document.querySelector('input[type="search"], input[placeholder*="Search"]');
+    };
+
     // Helper to close picker safely and aggressively
     const closePicker = () => {
         const escOpts = {
@@ -59,7 +63,7 @@
             document.activeElement.dispatchEvent(new KeyboardEvent('keydown', escOpts));
             document.activeElement.blur();
         }
-        // Click outside (e.g. on the main page header) to force close popovers
+        // Click outside (on heading)
         const header = document.querySelector('h2') || document.querySelector('h1');
         if (header) {
             header.click();
@@ -78,25 +82,49 @@
         const emojiIndex = (i + offset) % emojis.length;
         const emoji = emojis[emojiIndex];
 
-        // Scroll container into view first
-        container.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        await delay(300); // Wait for scroll animation to settle
-
         // Skip default/sparkle/unset emojis
         if (!emoji || emoji === "✨") {
             console.log(`[${i + 1}/${limit}] Skipping default sparkle at file index ${emojiIndex}.`);
             continue;
         }
 
+        // 1. Ensure any lingering pickers are closed first
+        if (isPickerOpen()) {
+            closePicker();
+            for (let j = 0; j < 10; j++) {
+                if (!isPickerOpen()) break;
+                await delay(100);
+            }
+        }
+
+        // 2. Scroll container into view
+        container.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        await delay(300); // Wait for scroll animation to settle
+
         console.log(`[${i + 1}/${limit}] Mapping sticker to emoji: ${emoji} (file index ${emojiIndex})`);
 
-        // Open the emoji picker
+        // 3. Open the emoji picker
         btn.click();
-        await delay(400); // Let the picker render completely
+        
+        // 4. Wait dynamically for the picker to open (max 1 second)
+        let opened = false;
+        for (let j = 0; j < 10; j++) {
+            if (isPickerOpen()) {
+                opened = true;
+                break;
+            }
+            await delay(100);
+        }
+
+        if (!opened) {
+            console.warn(`[${i + 1}/${limit}] Picker failed to open. Retrying click...`);
+            btn.click();
+            await delay(400);
+        }
 
         let clicked = false;
 
-        // Try direct click on visible emojis in the popover
+        // 5. Try direct click on visible emojis in the popover
         const candidates = document.querySelectorAll('button, [role="button"], [role="option"]');
         for (const cand of candidates) {
             if (cand.textContent === emoji || cand.getAttribute('aria-label') === emoji || cand.getAttribute('data-emoji') === emoji) {
@@ -106,13 +134,13 @@
             }
         }
 
-        // If not found in default view, use the search input
+        // 6. If not found in default view, use the search input
         if (!clicked) {
             const searchInput = document.querySelector('input[type="search"], input[placeholder*="Search"]');
             if (searchInput) {
                 searchInput.value = emoji;
                 searchInput.dispatchEvent(new Event('input', { bubbles: true }));
-                await delay(400); // Wait for search results to filter
+                await delay(350); // Wait for search results to load
 
                 // Click first result
                 const firstResult = document.querySelector('[role="option"], .emoji-button, button[class*="emoji"]');
@@ -123,12 +151,27 @@
             }
         }
 
-        // Always attempt to close the picker or clean up focus
-        if (!clicked) {
-            console.warn(`[${i + 1}/${limit}] Could not select emoji "${emoji}". Closing picker.`);
+        // 7. Wait dynamically for the picker to close (max 1 second)
+        let closed = false;
+        for (let j = 0; j < 10; j++) {
+            if (!isPickerOpen()) {
+                closed = true;
+                break;
+            }
+            await delay(100);
         }
-        closePicker();
-        await delay(200); // Brief pause to let UI close and settle
+
+        // 8. If still open, force close it
+        if (!closed) {
+            console.warn(`[${i + 1}/${limit}] Picker still open. Force closing.`);
+            closePicker();
+            for (let j = 0; j < 10; j++) {
+                if (!isPickerOpen()) break;
+                await delay(100);
+            }
+        }
+
+        await delay(150); // Brief safety pause before scrolling to the next
     }
 
     console.log("%cAuto-mapping completed!", "color: #00ff00; font-weight: bold; font-size: 14px;");
