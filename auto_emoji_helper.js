@@ -23,15 +23,15 @@
     // Hardcoded emoji list matching the folder's files in order
     const emojis = ["😠", "😫", "😎", "🎨", "👍", "🤔", "😎", "🔥", "😰", "😄", "😡", "🧑‍🍳", "🤔", "😩", "🤔", "😮", "👍", "😤", "😊", "😊", "😭", "😏", "😊", "😉", "😋", "🥳", "🎶", "😩", "😭", "📸", "💡", "😴", "🥰", "👋", "🤑", "🥳", " exasperated", "🥺", "🤩", "🦋", "😜", "🎶", "😡", "🤔", "😁", "🕯️", "😉", "😏", "🤔", "😔", "😉", "😟", "😴", "😎", "😭", "🥰", "😉", "🤨", "😊", "😉", "😊", "🧐", "😩", "😤", "😏", "🥰", "😄", "😮", "😮", "😠", "🥺", "😻", "🤔", "😊", "😅", "😋", "😭", "😊", "😳", "🤔", "😭", "💪", "😴", "😮", "😢", "👋", "🤫", "😡", "🤔", "😒", "😉", "😢", "😊", "😊", "😔", "😏", "😄", "😉", "😉", "🥰", "🥺", "😳", "😮", "😠", "🥺", "👍", "😉", "😭", "✌️", "😉", "😊", "😅", "😮", "😴", "✨", "😩", "😖", "😔", "🥱", "😏", "🤔", "🥰", "😔", "😠", "👍", "❓", "✨", "🤩", "😠", "😴", "😉", "😌", "😒", "😤", "✍️", "🤔", "💰", "🤔", "😨", "👊", "😡", "🥰", "🤔", "😩", "😭", "👋", "🙏", "🚶", "🕰️", "🗑️"];
 
-    // Get all emoji trigger buttons on the page
-    const buttons = Array.from(document.querySelectorAll('button')).filter(btn => {
-        return btn.className && btn.className.includes('_emoji-button_');
+    // Get all sticker containers on the page
+    const containers = Array.from(document.querySelectorAll('div')).filter(el => {
+        return el.className && el.className.includes('_container_') && el.querySelector('img') && el.querySelector('button');
     });
 
-    console.log(`%cFound ${buttons.length} emoji buttons in Signal Creator. Target emojis count: ${emojis.length}`, 'color: #00ff00; font-weight: bold;');
+    console.log(`%cFound ${containers.length} sticker containers in Signal Creator. Target emojis count: ${emojis.length}`, 'color: #00ff00; font-weight: bold;');
 
-    if (buttons.length === 0) {
-        console.error("No emoji buttons found! Are you on the 'Choose Emojis' screen?");
+    if (containers.length === 0) {
+        console.error("No sticker containers found! Are you on the 'Choose Emojis' screen?");
         return;
     }
 
@@ -42,27 +42,45 @@
 
     console.log(`Using offset: ${offset}. Rotating emojis array...`);
 
-    // Helper to close picker safely
+    // Helper to close picker safely and aggressively
     const closePicker = () => {
-        const escEvent = new KeyboardEvent('keydown', {
+        const escOpts = {
             key: 'Escape',
             code: 'Escape',
             keyCode: 27,
             which: 27,
             bubbles: true,
             cancelable: true
-        });
-        document.dispatchEvent(escEvent);
+        };
+        // Send Escape event everywhere
+        document.dispatchEvent(new KeyboardEvent('keydown', escOpts));
+        document.body.dispatchEvent(new KeyboardEvent('keydown', escOpts));
+        if (document.activeElement) {
+            document.activeElement.dispatchEvent(new KeyboardEvent('keydown', escOpts));
+            document.activeElement.blur();
+        }
+        // Click outside (e.g. on the main page header) to force close popovers
+        const header = document.querySelector('h2') || document.querySelector('h1');
+        if (header) {
+            header.click();
+        }
     };
 
-    const limit = Math.min(buttons.length, emojis.length);
+    const limit = Math.min(containers.length, emojis.length);
 
     for (let i = 0; i < limit; i++) {
-        const btn = buttons[i];
+        const container = containers[i];
+        const btn = container.querySelector('button');
+
+        if (!btn) continue;
         
         // Calculate the rotated emoji index
         const emojiIndex = (i + offset) % emojis.length;
         const emoji = emojis[emojiIndex];
+
+        // Scroll container into view first
+        container.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        await delay(300); // Wait for scroll animation to settle
 
         // Skip default/sparkle/unset emojis
         if (!emoji || emoji === "✨") {
@@ -74,7 +92,7 @@
 
         // Open the emoji picker
         btn.click();
-        await delay(350); // Generous delay to let the picker load
+        await delay(400); // Let the picker render completely
 
         let clicked = false;
 
@@ -94,7 +112,7 @@
             if (searchInput) {
                 searchInput.value = emoji;
                 searchInput.dispatchEvent(new Event('input', { bubbles: true }));
-                await delay(350); // Let search results load
+                await delay(400); // Wait for search results to filter
 
                 // Click first result
                 const firstResult = document.querySelector('[role="option"], .emoji-button, button[class*="emoji"]');
@@ -105,12 +123,12 @@
             }
         }
 
+        // Always attempt to close the picker or clean up focus
         if (!clicked) {
             console.warn(`[${i + 1}/${limit}] Could not select emoji "${emoji}". Closing picker.`);
-            closePicker();
         }
-
-        await delay(250); // Generous pause between stickers
+        closePicker();
+        await delay(200); // Brief pause to let UI close and settle
     }
 
     console.log("%cAuto-mapping completed!", "color: #00ff00; font-weight: bold; font-size: 14px;");
