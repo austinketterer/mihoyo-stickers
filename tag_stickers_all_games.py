@@ -3,6 +3,7 @@ import sys
 import json
 import time
 import base64
+import re
 import urllib.request
 import urllib.error
 
@@ -14,7 +15,7 @@ CONSOLIDATED_DIR = os.path.join(BASE_DIR, "Signal_Packs", "Consolidated_Packs")
 MAPPINGS_FILE = os.path.join(BASE_DIR, "emoji_mappings.json")
 
 def analyze_batch(file_paths):
-    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key={API_KEY}"
+    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash-lite:generateContent?key={API_KEY}"
     
     parts = []
     # Add instruction
@@ -54,35 +55,47 @@ def analyze_batch(file_paths):
         headers={"Content-Type": "application/json"}
     )
     
-    try:
-        # 45 second timeout for larger batches
-        with urllib.request.urlopen(req, timeout=45) as response:
-            res_data = json.loads(response.read().decode("utf-8"))
-            text = res_data["candidates"][0]["content"]["parts"][0]["text"].strip()
-            # Clean up markdown code blocks if present
-            if text.startswith("```"):
-                text = text.split("\n", 1)[1]
-            if text.endswith("```"):
-                text = text.rsplit("\n", 1)[0]
-            text = text.strip()
-            if text.startswith("json"):
-                text = text[4:].strip()
+    for attempt in range(4):
+        try:
+            # 60 second timeout for larger batches
+            with urllib.request.urlopen(req, timeout=60) as response:
+                res_data = json.loads(response.read().decode("utf-8"))
+                text = res_data["candidates"][0]["content"]["parts"][0]["text"].strip()
+                # Clean up markdown code blocks if present
+                if text.startswith("```"):
+                    text = text.split("\n", 1)[1]
+                if text.endswith("```"):
+                    text = text.rsplit("\n", 1)[0]
+                text = text.strip()
+                if text.startswith("json"):
+                    text = text[4:].strip()
+                
+                emojis = json.loads(text)
+                if isinstance(emojis, list):
+                    return [str(emo).strip() for emo in emojis]
+                return None
+        except urllib.error.HTTPError as e:
+            err_msg = e.read().decode('utf-8')
+            print(f"  HTTP Error {e.code} on attempt {attempt+1}: {err_msg[:120]}...")
+            if e.code == 429:
+                sleep_sec = 25
+                try:
+                    err_json = json.loads(err_msg)
+                    msg = err_json.get("error", {}).get("message", "")
+                    match = re.search(r"retry in (\d+\.?\d*)s", msg)
+                    if match:
+                        sleep_sec = int(float(match.group(1))) + 3
+                except Exception:
+                    pass
+                print(f"    Rate limit hit. Sleeping {sleep_sec} seconds before retrying...")
+                time.sleep(sleep_sec)
+            else:
+                return None
+        except Exception as e:
+            print(f"  Error calling API on attempt {attempt+1}: {e}")
+            time.sleep(5)
             
-            emojis = json.loads(text)
-            if isinstance(emojis, list):
-                # Clean up any non-emoji strings if the model returns them
-                cleaned = []
-                for emo in emojis:
-                    # Strip spaces or words, default to a smiley if empty
-                    cleaned.append(str(emo).strip())
-                return cleaned
-            return None
-    except urllib.error.HTTPError as e:
-        print(f"HTTP Error: {e.code} - {e.read().decode('utf-8')}")
-        return None
-    except Exception as e:
-        print(f"Error calling API: {e}")
-        return None
+    return None
 
 def process_items(items, mappings):
     file_paths = [os.path.join(CONSOLIDATED_DIR, item[0], item[1]) for item in items]
