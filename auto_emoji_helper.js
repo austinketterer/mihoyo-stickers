@@ -97,9 +97,9 @@
             }
         }
 
-        // 2. Scroll container into view
-        container.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        await delay(300); // Wait for scroll animation to settle
+        // 2. Scroll container into view instantly (no smooth transition)
+        container.scrollIntoView({ block: 'center' });
+        await delay(100); // Settle layout instantly
 
         console.log(`[${i + 1}/${limit}] Mapping sticker to emoji: ${emoji} (file index ${emojiIndex})`);
 
@@ -171,7 +171,7 @@
             }
         }
 
-        await delay(150); // Brief safety pause before scrolling to the next
+        await delay(100); // Brief safety pause before scrolling to the next
     }
 
     console.log("%cAuto-mapping completed!", "color: #00ff00; font-weight: bold; font-size: 14px;");
