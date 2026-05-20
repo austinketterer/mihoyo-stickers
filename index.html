@@ -60,38 +60,32 @@
         </section>
     </main>
 
-    <!-- Pack Detail Modal (Split-Pane layout) -->
+    <!-- Pack Detail Modal (Simplified Layout) -->
     <div class="modal" id="pack-modal">
-        <div class="modal-content split-pane">
+        <div class="modal-content">
             <span class="close-btn" id="close-modal">&times;</span>
             
-            <!-- Left Sidebar -->
-            <div class="modal-sidebar">
+            <!-- Modal Header Section -->
+            <div class="modal-header-section">
                 <div class="modal-cover-wrapper">
                     <img id="modal-cover" src="" alt="Pack Cover">
                     <div class="cover-blur-bg" id="modal-cover-blur"></div>
                 </div>
-                <h2 id="modal-title">Pack Name</h2>
-                <div class="modal-info-sidebar">
-                    <span class="modal-badge" id="modal-sticker-count">0 Stickers</span>
-                    <span class="modal-badge type-badge" id="modal-pack-type">Signal Pack</span>
+                <div class="modal-details">
+                    <h2 id="modal-title">Pack Name</h2>
+                    <div class="modal-meta-row">
+                        <span class="modal-badge" id="modal-sticker-count">0 Stickers</span>
+                        <span class="modal-badge type-badge" id="modal-pack-type">Signal Pack</span>
+                    </div>
                 </div>
-                <div class="modal-actions-sidebar">
+                <div class="modal-actions-wrapper">
                     <a href="#" class="modal-action-btn" id="modal-action-btn" target="_blank">Add to Signal</a>
                 </div>
             </div>
             
-            <!-- Right Content Area -->
-            <div class="modal-gallery-pane">
-                <div class="modal-gallery-header">
-                    <div class="modal-search-wrapper">
-                        <input type="text" id="modal-search-input" placeholder="Search stickers in this pack...">
-                        <span class="modal-search-icon">🔍</span>
-                    </div>
-                </div>
-                <div class="stickers-gallery" id="modal-stickers-grid">
-                    <!-- Sticker items dynamic insertion -->
-                </div>
+            <!-- Stickers Gallery Grid -->
+            <div class="stickers-gallery" id="modal-stickers-grid">
+                <!-- Sticker items dynamic insertion -->
             </div>
         </div>
     </div>

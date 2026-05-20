@@ -161,11 +161,9 @@ function setupCardGlow(card) {
 function filterAllViews() {
     const flatList = getEmotesFlatForActiveGame();
     
-    // Update stats (total across all games)
-    const totalStickersCount = hsrEmotesFlat.length + genshinEmotesFlat.length + zzzEmotesFlat.length;
-    const totalPacksCount = Math.ceil(hsrEmotesFlat.length / 150) + Math.ceil(genshinEmotesFlat.length / 150) + Math.ceil(zzzEmotesFlat.length / 150);
-    document.getElementById('stat-packs').textContent = totalPacksCount;
-    document.getElementById('stat-stickers').textContent = totalStickersCount;
+    // Update stats
+    document.getElementById('stat-packs').textContent = Math.ceil(flatList.length / 150);
+    document.getElementById('stat-stickers').textContent = flatList.length;
     
     const volumeSize = 150;
     const totalVolumes = Math.ceil(flatList.length / volumeSize);
@@ -218,7 +216,7 @@ function renderSignalPackCard(volNum, volEmotes) {
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 4px;">
                     <path d="M12 2C6.477 2 2 6.477 2 12c0 2.224.723 4.28 1.94 5.952l-1.39 5.097 5.25-1.348C9.333 22.583 10.635 22.84 12 22.84c5.523 0 10-4.477 10-10S17.523 2 12 2zm.05 16.03c-2.316 0-4.32-.976-5.748-2.525.138-.636.568-1.187 1.258-1.378 1.09-.3 2.19-.51 3.32-.63.78.78 1.83 1.27 3.01 1.27 1.25 0 2.36-.55 3.12-1.42 1.06.13 2.1.34 3.12.63.66.19 1.06.72 1.19 1.34-1.38 1.63-3.44 2.713-5.83 2.713-.82 0-1.63-.1-2.44-.01z"/>
                 </svg>
-                Add to Signal
+                   Add to Signal
             </a>
             <button class="btn btn-secondary view-vol-btn" data-vol="${volNum}">Browse Pack</button>
         </div>
@@ -265,35 +263,6 @@ function setupEventListeners() {
     modal.addEventListener('click', (e) => {
         if (e.target === modal) {
             modal.classList.remove('active');
-        }
-    });
-
-    // Inner modal sticker search filter handler
-    const modalSearchInput = document.getElementById('modal-search-input');
-    modalSearchInput.addEventListener('input', (e) => {
-        const query = e.target.value.toLowerCase().trim();
-        if (!query) {
-            renderModalGallery(currentModalEmotes);
-            return;
-        }
-        
-        const filtered = currentModalEmotes.filter(emote => {
-            const matchesId = emote.id.toString().includes(query);
-            const matchesPack = emote.packTitle && emote.packTitle.toLowerCase().includes(query);
-            return matchesId || matchesPack;
-        });
-        
-        renderModalGallery(filtered);
-    });
-
-    // Keyboard shortcut tracker (Press / to focus search inside modal)
-    document.addEventListener('keydown', (e) => {
-        if (e.key === '/' && document.activeElement !== modalSearchInput) {
-            if (modal.classList.contains('active')) {
-                e.preventDefault();
-                modalSearchInput.focus();
-                modalSearchInput.select();
-            }
         }
     });
 
@@ -357,9 +326,6 @@ function openVolumeModal(volNum) {
     };
     coverBlur.style.backgroundImage = `url('${localCover}')`;
     
-    // Clear search inside modal
-    document.getElementById('modal-search-input').value = '';
-    
     renderModalGallery(currentModalEmotes);
     modal.classList.add('active');
 }
@@ -370,7 +336,7 @@ function renderModalGallery(emotesToRender) {
     gallery.innerHTML = '';
     
     if (emotesToRender.length === 0) {
-        gallery.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 3rem 0; color: var(--text-secondary);">No stickers found matching the search.</div>`;
+        gallery.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 3rem 0; color: var(--text-secondary);">No stickers found.</div>`;
         return;
     }
     
