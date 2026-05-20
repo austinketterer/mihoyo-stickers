@@ -185,7 +185,8 @@ TEMPLATE = """/**
             }
         }
 
-        await delay(100); // Brief safety pause before scrolling to the next
+        // Wait 400ms to let all close transitions and overlays fully disappear
+        await delay(400); 
     }
 
     console.log("%cAuto-mapping completed!", "color: #00ff00; font-weight: bold; font-size: 14px;");
