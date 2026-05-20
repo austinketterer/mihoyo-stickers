@@ -138,6 +138,16 @@ async function loadStickerHub() {
             }
         });
 
+        // Calculate and display global total counts for all games combined
+        const totalStickers = hsrEmotesFlat.length + genshinEmotesFlat.length + zzzEmotesFlat.length;
+        const hsrVols = Math.ceil(hsrEmotesFlat.length / 150);
+        const genshinVols = Math.ceil(genshinEmotesFlat.length / 150);
+        const zzzVols = Math.ceil(zzzEmotesFlat.length / 150);
+        const totalPacks = hsrVols + genshinVols + zzzVols;
+        
+        document.getElementById('stat-packs').textContent = totalPacks;
+        document.getElementById('stat-stickers').textContent = totalStickers;
+
         // Initialize features
         filterAllViews();
         setupEventListeners();
@@ -160,10 +170,6 @@ function setupCardGlow(card) {
 // Central filtering controller
 function filterAllViews() {
     const flatList = getEmotesFlatForActiveGame();
-    
-    // Update stats
-    document.getElementById('stat-packs').textContent = Math.ceil(flatList.length / 150);
-    document.getElementById('stat-stickers').textContent = flatList.length;
     
     const volumeSize = 150;
     const totalVolumes = Math.ceil(flatList.length / volumeSize);
