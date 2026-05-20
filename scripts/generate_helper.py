@@ -191,6 +191,12 @@ TEMPLATE = """/**
 """
 
 def main():
+    # Force stdout to use UTF-8 encoding to support emojis in console printout
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+    except Exception:
+        pass
+
     if len(sys.argv) < 3:
         print("Usage: python generate_helper.py <game> <volume_number>")
         print("Example: python generate_helper.py hsr 1")
@@ -245,11 +251,14 @@ def main():
     js_content = js_content.replace("__EMOJIS_COUNT__", str(len(files)))
     js_content = js_content.replace("__EMOJIS_ARRAY__", json.dumps(emojis, ensure_ascii=False))
 
-    output_path = os.path.join(base_dir, "auto_emoji_helper.js")
+    output_path = os.path.join(base_dir, "data", "auto_emoji_helper.js")
     try:
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(js_content)
         print(f"SUCCESS: Generated {output_path} for {folder_name}!")
+        print("\n--- COPY JAVASCRIPT CONSOLE CODE BELOW ---")
+        print(js_content)
+        print("--- END OF JAVASCRIPT CONSOLE CODE ---\n")
     except Exception as e:
         print(f"Error writing helper script: {e}")
         sys.exit(1)
