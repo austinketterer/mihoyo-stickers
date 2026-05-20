@@ -161,9 +161,11 @@ function setupCardGlow(card) {
 function filterAllViews() {
     const flatList = getEmotesFlatForActiveGame();
     
-    // Update stats
-    document.getElementById('stat-packs').textContent = Math.ceil(flatList.length / 150);
-    document.getElementById('stat-stickers').textContent = flatList.length;
+    // Update stats (total across all games)
+    const totalStickersCount = hsrEmotesFlat.length + genshinEmotesFlat.length + zzzEmotesFlat.length;
+    const totalPacksCount = Math.ceil(hsrEmotesFlat.length / 150) + Math.ceil(genshinEmotesFlat.length / 150) + Math.ceil(zzzEmotesFlat.length / 150);
+    document.getElementById('stat-packs').textContent = totalPacksCount;
+    document.getElementById('stat-stickers').textContent = totalStickersCount;
     
     const volumeSize = 150;
     const totalVolumes = Math.ceil(flatList.length / volumeSize);
