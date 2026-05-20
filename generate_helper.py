@@ -128,8 +128,12 @@ TEMPLATE = """/**
 
         let clicked = false;
 
-        // 5. Try direct click on visible emojis in the popover
-        const candidates = document.querySelectorAll('button, [role="button"], [role="option"]');
+        // 5. Try direct click on visible emojis in the popover (filter out sticker container buttons)
+        const candidates = Array.from(document.querySelectorAll('button, [role="button"], [role="option"]')).filter(cand => {
+            // Ignore any buttons that belong to the sticker containers
+            return !cand.closest('div[class*="_container_"]');
+        });
+
         for (const cand of candidates) {
             if (cand.textContent === emoji || cand.getAttribute('aria-label') === emoji || cand.getAttribute('data-emoji') === emoji) {
                 cand.click();
@@ -146,10 +150,13 @@ TEMPLATE = """/**
                 searchInput.dispatchEvent(new Event('input', { bubbles: true }));
                 await delay(350); // Wait for search results to load
 
-                // Click first result
-                const firstResult = document.querySelector('[role="option"], .emoji-button, button[class*="emoji"]');
-                if (firstResult) {
-                    firstResult.click();
+                // Click first result (again, filter out sticker container buttons)
+                const results = Array.from(document.querySelectorAll('[role="option"], .emoji-button, button[class*="emoji"]')).filter(cand => {
+                    return !cand.closest('div[class*="_container_"]');
+                });
+                
+                if (results.length > 0) {
+                    results[0].click();
                     clicked = true;
                 }
             }
