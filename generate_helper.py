@@ -2,6 +2,128 @@ import os
 import sys
 import json
 
+TEMPLATE = """/**
+ * Signal Desktop Sticker Auto-Emoji Assigner
+ * 
+ * Target Pack: __FOLDER_NAME__ (__EMOJIS_COUNT__ stickers)
+ * 
+ * Instructions:
+ * 1. Open Signal Desktop, go to File > Create/upload sticker pack.
+ * 2. Drag & drop the '__FOLDER_NAME__' folder.
+ * 3. Click "Next" to go to the "Choose Emojis" screen.
+ * 4. Once there, press Ctrl + Shift + I to open Developer Tools.
+ * 5. In DevTools, click the dropdown next to the word "top" (JavaScript Context)
+ *    and select "Electron Isolated Context".
+ * 6. Paste this entire script into the console and press Enter!
+ */
+
+(async () => {
+    const delay = ms => new Promise(res => setTimeout(res, ms));
+
+    // Hardcoded emoji list matching the folder's files in order
+    const emojis = __EMOJIS_ARRAY__;
+
+    // Get all emoji trigger buttons on the page
+    const buttons = Array.from(document.querySelectorAll('button')).filter(btn => {
+        return btn.className && btn.className.includes('_emoji-button_');
+    });
+
+    console.log(`%cFound ${buttons.length} emoji buttons in Signal Creator. Target emojis count: ${emojis.length}`, 'color: #00ff00; font-weight: bold;');
+
+    if (buttons.length === 0) {
+        console.error("No emoji buttons found! Are you on the 'Choose Emojis' screen?");
+        return;
+    }
+
+    // Ask user for the offset (the prefix of the first sticker shown)
+    const firstStickerNum = prompt("Look at your first sticker in the list. What is its prefix number (e.g. 81)?", "81");
+    if (firstStickerNum === null) {
+        console.log("Cancelled.");
+        return;
+    }
+    const offset = parseInt(firstStickerNum, 10);
+    if (isNaN(offset) || offset < 0 || offset >= emojis.length) {
+        console.error("Invalid offset entered. It must be between 0 and " + (emojis.length - 1));
+        return;
+    }
+
+    console.log(`Using offset: ${offset}. Rotating emojis array...`);
+
+    // Helper to close picker safely
+    const closePicker = () => {
+        const escEvent = new KeyboardEvent('keydown', {
+            key: 'Escape',
+            code: 'Escape',
+            keyCode: 27,
+            which: 27,
+            bubbles: true,
+            cancelable: true
+        });
+        document.dispatchEvent(escEvent);
+    };
+
+    const limit = Math.min(buttons.length, emojis.length);
+
+    for (let i = 0; i < limit; i++) {
+        const btn = buttons[i];
+        
+        // Calculate the rotated emoji index
+        const emojiIndex = (i + offset) % emojis.length;
+        const emoji = emojis[emojiIndex];
+
+        // Skip default/sparkle/unset emojis
+        if (!emoji || emoji === "✨") {
+            console.log(`[${i + 1}/${limit}] Skipping default sparkle at file index ${emojiIndex}.`);
+            continue;
+        }
+
+        console.log(`[${i + 1}/${limit}] Mapping sticker to emoji: ${emoji} (file index ${emojiIndex})`);
+
+        // Open the emoji picker
+        btn.click();
+        await delay(350); // Generous delay to let the picker load
+
+        let clicked = false;
+
+        // Try direct click on visible emojis in the popover
+        const candidates = document.querySelectorAll('button, [role="button"], [role="option"]');
+        for (const cand of candidates) {
+            if (cand.textContent === emoji || cand.getAttribute('aria-label') === emoji || cand.getAttribute('data-emoji') === emoji) {
+                cand.click();
+                clicked = true;
+                break;
+            }
+        }
+
+        // If not found in default view, use the search input
+        if (!clicked) {
+            const searchInput = document.querySelector('input[type="search"], input[placeholder*="Search"]');
+            if (searchInput) {
+                searchInput.value = emoji;
+                searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+                await delay(350); // Generous delay for search results to load
+
+                // Click first result
+                const firstResult = document.querySelector('[role="option"], .emoji-button, button[class*="emoji"]');
+                if (firstResult) {
+                    firstResult.click();
+                    clicked = true;
+                }
+            }
+        }
+
+        if (!clicked) {
+            console.warn(`[${i + 1}/${limit}] Could not select emoji "${emoji}". Closing picker.`);
+            closePicker();
+        }
+
+        await delay(250); // Generous pause between stickers to avoid rate limit/glitch
+    }
+
+    console.log("%cAuto-mapping completed!", "color: #00ff00; font-weight: bold; font-size: 14px;");
+})();
+"""
+
 def main():
     if len(sys.argv) < 3:
         print("Usage: python generate_helper.py <game> <volume_number>")
@@ -49,98 +171,11 @@ def main():
         else:
             emojis.append("✨")
             
-    # Generate the JS content
-    js_content = f"""/**
- * Signal Desktop Sticker Auto-Emoji Assigner
- * 
- * Target Pack: {folder_name} ({len(emojis)} stickers)
- * 
- * Instructions:
- * 1. Open Signal Desktop, go to File > Create/upload sticker pack.
- * 2. Drag & drop the '{folder_name}' folder.
- * 3. Click "Next" to go to the "Choose Emojis" screen.
- * 4. Once there, press Ctrl + Shift + I to open Developer Tools.
- * 5. In DevTools, click the dropdown next to the word "top" (JavaScript Context)
- *    and select "Electron Isolated Context".
- * 6. Paste this entire script into the console and press Enter!
- */
-
-(async () => {{
-    const delay = ms => new Promise(res => setTimeout(res, ms));
-
-    // Hardcoded emoji list matching the folder's files in order
-    const emojis = {json.dumps(emojis, ensure_ascii=False)};
-
-    // Get all emoji trigger buttons on the page
-    const buttons = Array.from(document.querySelectorAll('button')).filter(btn => {{
-        return btn.className.includes('_emoji-button_');
-    }});
-
-    console.log(`%cFound ${{buttons.length}} emoji buttons in Signal Creator. Target emojis count: ${{emojis.length}}`, 'color: #00ff00; font-weight: bold;');
-
-    if (buttons.length === 0) {{
-        console.error("No emoji buttons found! Are you on the 'Choose Emojis' screen?");
-        return;
-    }}
-
-    const limit = Math.min(buttons.length, emojis.length);
-
-    for (let i = 0; i < limit; i++) {{
-        const btn = buttons[i];
-        const emoji = emojis[i];
-
-        // Skip default/sparkle/unset emojis
-        if (!emoji || emoji === "✨") {{
-            console.log(`[${{i + 1}}/${{limit}}] Skipping default sparkle.`);
-            continue;
-        }}
-
-        console.log(`[${{i + 1}}/${{limit}}] Mapping to emoji: ${{emoji}}`);
-
-        // Open the emoji picker for this sticker
-        btn.click();
-        await delay(120); // Wait for picker to open
-
-        let clicked = false;
-
-        // Try direct click if emoji is visible in the picker
-        const candidates = document.querySelectorAll('button, [role="button"], [role="option"]');
-        for (const cand of candidates) {{
-            if (cand.textContent === emoji || cand.getAttribute('aria-label') === emoji || cand.getAttribute('data-emoji') === emoji) {{
-                cand.click();
-                clicked = true;
-                break;
-            }}
-        }}
-
-        // If not found in default view, use the picker search box
-        if (!clicked) {{
-            const searchInput = document.querySelector('input[type="search"], input[placeholder*="Search"]');
-            if (searchInput) {{
-                searchInput.value = emoji;
-                searchInput.dispatchEvent(new Event('input', {{ bubbles: true }}));
-                await delay(150); // Wait for search results to load
-
-                // Click the first result
-                const firstResult = document.querySelector('[role="option"], .emoji-button, button[class*="emoji"]');
-                if (firstResult) {{
-                    firstResult.click();
-                    clicked = true;
-                }}
-            }}
-        }}
-
-        if (!clicked) {{
-            console.warn(`[${{i + 1}}/${{limit}}] Could not select emoji "${{emoji}}". Closing picker.`);
-            btn.click(); // Click again to close picker
-        }}
-
-        await delay(120); // Pause before next sticker
-    }}
-
-    console.log("%cAuto-mapping completed!", "color: #00ff00; font-weight: bold; font-size: 14px;");
-}})();
-"""
+    # Perform string replacements on template
+    js_content = TEMPLATE
+    js_content = js_content.replace("__FOLDER_NAME__", folder_name)
+    js_content = js_content.replace("__EMOJIS_COUNT__", str(len(files)))
+    js_content = js_content.replace("__EMOJIS_ARRAY__", json.dumps(emojis, ensure_ascii=False))
 
     output_path = "auto_emoji_helper.js"
     try:

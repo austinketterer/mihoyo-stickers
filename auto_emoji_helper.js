@@ -21,7 +21,7 @@
 
     // Get all emoji trigger buttons on the page
     const buttons = Array.from(document.querySelectorAll('button')).filter(btn => {
-        return btn.className.includes('_emoji-button_');
+        return btn.className && btn.className.includes('_emoji-button_');
     });
 
     console.log(`%cFound ${buttons.length} emoji buttons in Signal Creator. Target emojis count: ${emojis.length}`, 'color: #00ff00; font-weight: bold;');
@@ -31,27 +31,57 @@
         return;
     }
 
+    // Ask user for the offset (the prefix of the first sticker shown)
+    const firstStickerNum = prompt("Look at your first sticker in the list. What is its prefix number (e.g. 81)?", "81");
+    if (firstStickerNum === null) {
+        console.log("Cancelled.");
+        return;
+    }
+    const offset = parseInt(firstStickerNum, 10);
+    if (isNaN(offset) || offset < 0 || offset >= emojis.length) {
+        console.error("Invalid offset entered. It must be between 0 and " + (emojis.length - 1));
+        return;
+    }
+
+    console.log(`Using offset: ${offset}. Rotating emojis array...`);
+
+    // Helper to close picker safely
+    const closePicker = () => {
+        const escEvent = new KeyboardEvent('keydown', {
+            key: 'Escape',
+            code: 'Escape',
+            keyCode: 27,
+            which: 27,
+            bubbles: true,
+            cancelable: true
+        });
+        document.dispatchEvent(escEvent);
+    };
+
     const limit = Math.min(buttons.length, emojis.length);
 
     for (let i = 0; i < limit; i++) {
         const btn = buttons[i];
-        const emoji = emojis[i];
+        
+        // Calculate the rotated emoji index
+        const emojiIndex = (i + offset) % emojis.length;
+        const emoji = emojis[emojiIndex];
 
         // Skip default/sparkle/unset emojis
         if (!emoji || emoji === "✨") {
-            console.log(`[${i + 1}/${limit}] Skipping default sparkle.`);
+            console.log(`[${i + 1}/${limit}] Skipping default sparkle at file index ${emojiIndex}.`);
             continue;
         }
 
-        console.log(`[${i + 1}/${limit}] Mapping to emoji: ${emoji}`);
+        console.log(`[${i + 1}/${limit}] Mapping sticker to emoji: ${emoji} (file index ${emojiIndex})`);
 
-        // Open the emoji picker for this sticker
+        // Open the emoji picker
         btn.click();
-        await delay(120); // Wait for picker to open
+        await delay(350); // Generous delay to let the picker load
 
         let clicked = false;
 
-        // Try direct click if emoji is visible in the picker
+        // Try direct click on visible emojis in the popover
         const candidates = document.querySelectorAll('button, [role="button"], [role="option"]');
         for (const cand of candidates) {
             if (cand.textContent === emoji || cand.getAttribute('aria-label') === emoji || cand.getAttribute('data-emoji') === emoji) {
@@ -61,15 +91,15 @@
             }
         }
 
-        // If not found in default view, use the picker search box
+        // If not found in default view, use the search input
         if (!clicked) {
             const searchInput = document.querySelector('input[type="search"], input[placeholder*="Search"]');
             if (searchInput) {
                 searchInput.value = emoji;
                 searchInput.dispatchEvent(new Event('input', { bubbles: true }));
-                await delay(150); // Wait for search results to load
+                await delay(350); // Generous delay for search results to load
 
-                // Click the first result
+                // Click first result
                 const firstResult = document.querySelector('[role="option"], .emoji-button, button[class*="emoji"]');
                 if (firstResult) {
                     firstResult.click();
@@ -80,10 +110,10 @@
 
         if (!clicked) {
             console.warn(`[${i + 1}/${limit}] Could not select emoji "${emoji}". Closing picker.`);
-            btn.click(); // Click again to close picker
+            closePicker();
         }
 
-        await delay(120); // Pause before next sticker
+        await delay(250); // Generous pause between stickers to avoid rate limit/glitch
     }
 
     console.log("%cAuto-mapping completed!", "color: #00ff00; font-weight: bold; font-size: 14px;");
