@@ -29,7 +29,6 @@ let zzzEmotesFlat = [];
 let emojiMappings = {};
 
 // Filtering state
-let searchQuery = '';
 let activeGame = 'hsr'; // 'hsr', 'genshin', 'zzz'
 
 // Modal state
@@ -43,9 +42,9 @@ function getPackGame(pack) {
     const title = (pack.title || '').toLowerCase();
     if (title.includes('pom-pom') || title.includes('star rail') || title.includes('trailblaze') || title.includes('hsr') || title.includes('warp center')) {
         return 'hsr';
-    } else if (title.includes('paimon') || title.includes('genshin') || title.includes('traveler') || title.includes('paintings')) {
+    } else if (title.includes('paimon') || title.includes('genshin') || title.includes('traveler') || title.includes('paintings') || title.includes('teyvat') || title.includes('hilichurl') || title.includes('lanternlit') || title.includes('soaring kites') || title.includes('eula') || title.includes('hu tao') || title.includes('tartaglia') || title.includes('yae miko') || title.includes('liyue') || title.includes('mondstadt') || title.includes('fontaine') || title.includes('sumeru') || title.includes('inazuma') || title.includes('natlan') || title.includes('spring festival') || title.includes('let\'s go!') || title.includes('good fortune')) {
         return 'genshin';
-    } else if (title.includes('zenless') || title.includes('zzz') || title.includes('sugar rush') || title.includes('new eridu') || title.includes('planet stamps')) {
+    } else if (title.includes('zenless') || title.includes('zzz') || title.includes('sugar rush') || title.includes('new eridu') || title.includes('planet stamps') || title.includes('type ii') || title.includes('cunning hares') || title.includes('drip fest')) {
         return 'zzz';
     }
     return 'other';
@@ -53,15 +52,7 @@ function getPackGame(pack) {
 
 // Determine which game an emote belongs to
 function getEmoteGame(emote) {
-    const title = (emote.packTitle || '').toLowerCase();
-    if (title.includes('pom-pom') || title.includes('star rail') || title.includes('trailblaze') || title.includes('hsr') || title.includes('warp center')) {
-        return 'hsr';
-    } else if (title.includes('paimon') || title.includes('genshin') || title.includes('traveler') || title.includes('paintings')) {
-        return 'genshin';
-    } else if (title.includes('zenless') || title.includes('zzz') || title.includes('sugar rush') || title.includes('new eridu') || title.includes('planet stamps')) {
-        return 'zzz';
-    }
-    return 'other';
+    return getPackGame({ title: emote.packTitle });
 }
 
 // Return active flat list
@@ -146,7 +137,6 @@ async function loadStickerHub() {
         });
 
         // Initialize features
-        setupThemeSwitcher();
         filterAllViews();
         setupEventListeners();
     } catch (err) {
@@ -167,7 +157,6 @@ function setupCardGlow(card) {
 
 // Central filtering controller
 function filterAllViews() {
-    const query = searchQuery.toLowerCase().trim();
     const flatList = getEmotesFlatForActiveGame();
     
     // Update stats
@@ -183,21 +172,12 @@ function filterAllViews() {
     for (let i = 0; i < totalVolumes; i++) {
         const volNum = i + 1;
         const volEmotes = flatList.slice(i * volumeSize, (i + 1) * volumeSize);
-        
-        // Count matches within this volume
-        const matchCount = volEmotes.filter(emote => {
-            return !query || emote.packTitle.toLowerCase().includes(query);
-        }).length;
-        
-        // Show volume cards if filter matches or no query
-        if (matchCount > 0 || !query) {
-            renderSignalPackCard(volNum, volEmotes, matchCount);
-        }
+        renderSignalPackCard(volNum, volEmotes);
     }
 }
 
 // Render a single Consolidated Signal Card
-function renderSignalPackCard(volNum, volEmotes, matchCount) {
+function renderSignalPackCard(volNum, volEmotes) {
     const container = document.getElementById('packs-container');
     const signalLink = getSignalLink(activeGame, volNum);
     
@@ -212,22 +192,17 @@ function renderSignalPackCard(volNum, volEmotes, matchCount) {
         previewHtml += `<img class="preview-sticker" src="${localPath}" alt="Sticker" loading="lazy" onerror="this.onerror=null; this.src='${emote.url}';">`;
     });
 
-    const isFiltered = searchQuery !== '';
     let gameTitle = '';
     if (activeGame === 'hsr') gameTitle = 'HSR';
     else if (activeGame === 'genshin') gameTitle = 'Genshin';
     else if (activeGame === 'zzz') gameTitle = 'ZZZ';
-
-    const badgeHtml = isFiltered 
-        ? `<span class="badge">${matchCount} Matches</span>`
-        : `<span class="badge">${gameTitle} Vol. ${volNum}</span>`;
 
     card.innerHTML = `
         <div class="card-glow"></div>
         <div class="card-header">
             <h3 class="card-title">${gameTitle} Emotes Vol. ${volNum}</h3>
             <div class="card-meta">
-                ${badgeHtml}
+                <span class="badge">${gameTitle} Vol. ${volNum}</span>
                 <span>${volEmotes.length} Stickers</span>
             </div>
         </div>
@@ -273,19 +248,8 @@ function setupEventListeners() {
         });
         document.getElementById(`tab-${game}`).classList.add('active');
         
-        // Reset search inside main view
-        document.getElementById('search-input').value = '';
-        searchQuery = '';
-        
         filterAllViews();
     }
-
-    // Search input
-    const searchInput = document.getElementById('search-input');
-    searchInput.addEventListener('input', (e) => {
-        searchQuery = e.target.value;
-        filterAllViews();
-    });
 
     // Modal Close handlers
     const modal = document.getElementById('pack-modal');
@@ -318,17 +282,13 @@ function setupEventListeners() {
         renderModalGallery(filtered);
     });
 
-    // Keyboard shortcut tracker (Press / to focus search)
+    // Keyboard shortcut tracker (Press / to focus search inside modal)
     document.addEventListener('keydown', (e) => {
-        if (e.key === '/' && document.activeElement !== searchInput && document.activeElement !== modalSearchInput) {
+        if (e.key === '/' && document.activeElement !== modalSearchInput) {
             if (modal.classList.contains('active')) {
                 e.preventDefault();
                 modalSearchInput.focus();
                 modalSearchInput.select();
-            } else {
-                e.preventDefault();
-                searchInput.focus();
-                searchInput.select();
             }
         }
     });
@@ -424,37 +384,6 @@ function renderModalGallery(emotesToRender) {
         `;
         gallery.appendChild(item);
     });
-}
-
-// Dynamic theme configuration
-function setupThemeSwitcher() {
-    const savedTheme = localStorage.getItem('hsr-sticker-theme') || 'express';
-    setTheme(savedTheme);
-    
-    const themeButtons = document.querySelectorAll('.theme-btn');
-    themeButtons.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const theme = btn.getAttribute('data-theme');
-            setTheme(theme);
-        });
-    });
-}
-
-function setTheme(themeName) {
-    document.body.classList.remove('theme-express', 'theme-luofu', 'theme-acheron');
-    if (themeName !== 'express') {
-        document.body.classList.add(`theme-${themeName}`);
-    }
-    
-    document.querySelectorAll('.theme-btn').forEach(btn => {
-        if (btn.getAttribute('data-theme') === themeName) {
-            btn.classList.add('active');
-        } else {
-            btn.classList.remove('active');
-        }
-    });
-    
-    localStorage.setItem('hsr-sticker-theme', themeName);
 }
 
 // Copy sticker image directly to system clipboard

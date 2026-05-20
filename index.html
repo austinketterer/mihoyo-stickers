@@ -14,11 +14,6 @@
     <div class="twinkling"></div>
 
     <header>
-        <div class="theme-switcher-container">
-            <button class="theme-btn active" data-theme="express" title="Astral Express Theme">🚂 Express</button>
-            <button class="theme-btn" data-theme="luofu" title="Xianzhou Luofu Theme">🏮 Luofu</button>
-            <button class="theme-btn" data-theme="acheron" title="Acheron Void Theme">🔮 Void</button>
-        </div>
         <div class="header-container">
             <div class="logo">
                 <span class="brand-text">MIHOYO STICKERS</span>
@@ -26,7 +21,7 @@
             </div>
             <p class="subtitle">Complete MiHoYo Emote Collections. Optimized, transparent, and ready with one-click installation.</p>
             
-            <!-- Stats Dashboard -->
+            <!-- Stats Dashboard (3 columns) -->
             <div class="stats-dashboard">
                 <div class="stat-item">
                     <span class="stat-value" id="stat-packs">-</span>
@@ -35,10 +30,6 @@
                 <div class="stat-item">
                     <span class="stat-value" id="stat-stickers">-</span>
                     <span class="stat-label">Stickers</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-value">WebP/PNG</span>
-                    <span class="stat-label">Optimized</span>
                 </div>
                 <div class="stat-item">
                     <span class="stat-value">1-Click</span>
@@ -58,15 +49,6 @@
                     <button class="tab-btn" id="tab-genshin">Genshin Impact</button>
                     <button class="tab-btn" id="tab-zzz">Zenless Zone Zero</button>
                 </div>
-
-                <!-- Search Section -->
-                <div class="search-container">
-                    <div class="search-wrapper">
-                        <input type="text" id="search-input" placeholder="Search packs...">
-                        <span class="search-icon">🔍</span>
-                        <span class="search-shortcut">/</span>
-                    </div>
-                </div>
             </div>
         </div>
 
@@ -74,31 +56,6 @@
         <section id="packs-view" class="view-section active">
             <div class="packs-grid" id="packs-container">
                 <!-- Dynamic batch pack cards inserted by JS -->
-            </div>
-        </section>
-
-        <!-- Onboarding / FAQ Section -->
-        <section class="onboarding-section" id="onboarding-section">
-            <h2 class="section-title">How to Install & Use</h2>
-            <div class="steps-grid">
-                <div class="step-card">
-                    <div class="step-glow"></div>
-                    <div class="step-num">01</div>
-                    <h3>Get Signal App</h3>
-                    <p>Ensure the official Signal messenger is installed on your mobile phone or desktop client.</p>
-                </div>
-                <div class="step-card">
-                    <div class="step-glow"></div>
-                    <div class="step-num">02</div>
-                    <h3>Add Sticker Pack</h3>
-                    <p>Click the <strong>Add to Signal</strong> button on any consolidated pack. It redirects to Signal to import.</p>
-                </div>
-                <div class="step-card">
-                    <div class="step-glow"></div>
-                    <div class="step-num">03</div>
-                    <h3>Start Chatting</h3>
-                    <p>Open any Signal chat, open the stickers menu, select your pack, and start sending emotes!</p>
-                </div>
             </div>
         </section>
     </main>
