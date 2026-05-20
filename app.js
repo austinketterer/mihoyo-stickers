@@ -11,7 +11,9 @@ const SIGNAL_LINKS = {
         vol2: "https://signal.art/addstickers/#pack_id_genshin_vol_2",
         vol3: "https://signal.art/addstickers/#pack_id_genshin_vol_3",
         vol4: "https://signal.art/addstickers/#pack_id_genshin_vol_4",
-        vol5: "https://signal.art/addstickers/#pack_id_genshin_vol_5"
+        vol5: "https://signal.art/addstickers/#pack_id_genshin_vol_5",
+        vol6: "https://signal.art/addstickers/#pack_id_genshin_vol_6",
+        vol7: "https://signal.art/addstickers/#pack_id_genshin_vol_7"
     },
     zzz: {
         vol1: "https://signal.art/addstickers/#pack_id_zzz_vol_1",

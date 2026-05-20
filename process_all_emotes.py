@@ -65,11 +65,8 @@ def process_gif_to_webp(in_data, save_path, target_size=(512, 512)):
  
     configs = [
         (512, 80, 4),
-        (512, 80, 6),
-        (512, 60, 6),
-        (384, 70, 6),
-        (256, 60, 6),
-        (256, 40, 6)
+        (384, 75, 4),
+        (256, 70, 4)
     ]
 
     for res, qual, meth in configs:
