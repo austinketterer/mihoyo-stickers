@@ -165,7 +165,7 @@ def main():
         url = emote["url"]
         is_gif = ".gif" in url.split("?")[0].lower()
         ext = ".webp" if is_gif else ".png"
-        filename = f"{idx % 150}_{emote['id']}{ext}"
+        filename = f"{idx % 150}_{emote['id']}_✨{ext}"
         save_path = os.path.join(volume_folder, filename)
         consolidated_tasks.append((url, save_path, is_gif))
         

@@ -34,7 +34,7 @@ function getStickerLocalPath(emote) {
     const volIndex = globalIndex % 150;
     const isGif = emote.url.split('?')[0].toLowerCase().endsWith('.gif');
     const ext = isGif ? '.webp' : '.png';
-    return `Signal_Packs/Consolidated_Packs/HSR_Vol_${volNum}/${volIndex}_${emote.id}${ext}`;
+    return `Signal_Packs/Consolidated_Packs/HSR_Vol_${volNum}/${volIndex}_${emote.id}_✨${ext}`;
 }
 
 // Fetch and load metadata
@@ -148,7 +148,7 @@ function renderSignalPackCard(volNum, volEmotes, matchCount) {
     volEmotes.slice(0, 8).forEach((emote, idx) => {
         const isGif = emote.url.split('?')[0].toLowerCase().endsWith('.gif');
         const ext = isGif ? '.webp' : '.png';
-        const localPath = `Signal_Packs/Consolidated_Packs/HSR_Vol_${volNum}/${idx}_${emote.id}${ext}`;
+        const localPath = `Signal_Packs/Consolidated_Packs/HSR_Vol_${volNum}/${idx}_${emote.id}_✨${ext}`;
         previewHtml += `<img class="preview-sticker" src="${localPath}" alt="Sticker" loading="lazy">`;
     });
 
@@ -361,7 +361,7 @@ function openVolumeModal(volNum) {
     const firstEmote = currentModalEmotes[0];
     const isGif = firstEmote.url.split('?')[0].toLowerCase().endsWith('.gif');
     const ext = isGif ? '.webp' : '.png';
-    const localCover = `Signal_Packs/Consolidated_Packs/HSR_Vol_${volNum}/0_${firstEmote.id}${ext}`;
+    const localCover = `Signal_Packs/Consolidated_Packs/HSR_Vol_${volNum}/0_${firstEmote.id}_✨${ext}`;
     
     coverImg.src = localCover;
     coverBlur.style.backgroundImage = `url('${localCover}')`;
@@ -429,7 +429,7 @@ function renderModalGallery(emotesToRender) {
             const idxInVol = currentModalEmotes.findIndex(e => e.id === emote.id);
             const isGif = emote.url.split('?')[0].toLowerCase().endsWith('.gif');
             const ext = isGif ? '.webp' : '.png';
-            localPath = `Signal_Packs/Consolidated_Packs/HSR_Vol_${currentModalVolNum}/${idxInVol}_${emote.id}${ext}`;
+            localPath = `Signal_Packs/Consolidated_Packs/HSR_Vol_${currentModalVolNum}/${idxInVol}_${emote.id}_✨${ext}`;
         } else {
             localPath = getStickerLocalPath(emote);
         }
