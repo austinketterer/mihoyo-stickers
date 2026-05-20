@@ -25,20 +25,15 @@
     // Hardcoded emoji list matching the folder's files in order
     const emojis = ["😠", "😫", "😎", "🎨", "👍", "🤔", "😎", "🔥", "😰", "😄", "😡", "🧑‍🍳", "🤔", "😩", "🤔", "😮", "👍", "😤", "😊", "😊", "😭", "😏", "😊", "😉", "😋", "🥳", "🎶", "😩", "😭", "📸", "💡", "😴", "🥰", "👋", "🤑", "🥳", " exasperated", "🥺", "🤩", "🦋", "😜", "🎶", "😡", "🤔", "😁", "🕯️", "😉", "😏", "🤔", "😔", "😉", "😟", "😴", "😎", "😭", "🥰", "😉", "🤨", "😊", "😉", "😊", "🧐", "😩", "😤", "😏", "🥰", "😄", "😮", "😮", "😠", "🥺", "😻", "🤔", "😊", "😅", "😋", "😭", "😊", "😳", "🤔", "😭", "💪", "😴", "😮", "😢", "👋", "🤫", "😡", "🤔", "😒", "😉", "😢", "😊", "😊", "😔", "😏", "😄", "😉", "😉", "🥰", "🥺", "😳", "😮", "😠", "🥺", "👍", "😉", "😭", "✌️", "😉", "😊", "😅", "😮", "😴", "✨", "😩", "😖", "😔", "🥱", "😏", "🤔", "🥰", "😔", "😠", "👍", "❓", "✨", "🤩", "😠", "😴", "😉", "😌", "😒", "😤", "✍️", "🤔", "💰", "🤔", "😨", "👊", "😡", "🥰", "🤔", "😩", "😭", "👋", "🙏", "🚶", "🕰️", "🗑️"];
 
-    // Get all sticker containers on the page (strict matching to avoid duplicates and cover image)
-    const containers = Array.from(document.querySelectorAll('div')).filter(el => {
-        const hasContainerClass = el.className && typeof el.className === 'string' && 
-                                  el.className.split(' ').some(c => c.startsWith('_container_'));
-        return hasContainerClass && 
-               el.querySelector('img') && 
-               el.querySelector('button') && 
-               el.querySelector('[data-art-type="sticker"]');
+    // Get all emoji buttons on the page directly (ensures 1:1 matching, no duplicates)
+    const buttons = Array.from(document.querySelectorAll('button')).filter(btn => {
+        return btn.className && btn.className.includes('_emoji-button_');
     });
 
-    console.log(`%cFound ${containers.length} sticker containers in Signal Creator. Target emojis count: ${emojis.length}`, 'color: #00ff00; font-weight: bold;');
+    console.log(`%cFound ${buttons.length} emoji buttons in Signal Creator. Target emojis count: ${emojis.length}`, 'color: #00ff00; font-weight: bold;');
 
-    if (containers.length === 0) {
-        console.error("No sticker containers found! Are you on the 'Choose Emojis' screen?");
+    if (buttons.length === 0) {
+        console.error("No emoji buttons found! Are you on the 'Choose Emojis' screen?");
         return;
     }
 
@@ -78,13 +73,10 @@
         }
     };
 
-    const limit = Math.min(containers.length, emojis.length);
+    const limit = Math.min(buttons.length, emojis.length);
 
     for (let i = 0; i < limit; i++) {
-        const container = containers[i];
-        const btn = container.querySelector('button');
-
-        if (!btn) continue;
+        const btn = buttons[i];
         
         // Calculate the rotated emoji index
         const emojiIndex = (i + offset) % emojis.length;
@@ -105,8 +97,8 @@
             }
         }
 
-        // 2. Scroll container into view instantly (no smooth transition)
-        container.scrollIntoView({ block: 'center' });
+        // 2. Scroll the button itself into view instantly
+        btn.scrollIntoView({ block: 'center' });
         await delay(100); // Settle layout instantly
 
         console.log(`[${i + 1}/${limit}] Mapping sticker to emoji: ${emoji} (file index ${emojiIndex})`);
