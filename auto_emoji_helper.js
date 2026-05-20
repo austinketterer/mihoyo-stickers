@@ -25,9 +25,14 @@
     // Hardcoded emoji list matching the folder's files in order
     const emojis = ["😠", "😫", "😎", "🎨", "👍", "🤔", "😎", "🔥", "😰", "😄", "😡", "🧑‍🍳", "🤔", "😩", "🤔", "😮", "👍", "😤", "😊", "😊", "😭", "😏", "😊", "😉", "😋", "🥳", "🎶", "😩", "😭", "📸", "💡", "😴", "🥰", "👋", "🤑", "🥳", " exasperated", "🥺", "🤩", "🦋", "😜", "🎶", "😡", "🤔", "😁", "🕯️", "😉", "😏", "🤔", "😔", "😉", "😟", "😴", "😎", "😭", "🥰", "😉", "🤨", "😊", "😉", "😊", "🧐", "😩", "😤", "😏", "🥰", "😄", "😮", "😮", "😠", "🥺", "😻", "🤔", "😊", "😅", "😋", "😭", "😊", "😳", "🤔", "😭", "💪", "😴", "😮", "😢", "👋", "🤫", "😡", "🤔", "😒", "😉", "😢", "😊", "😊", "😔", "😏", "😄", "😉", "😉", "🥰", "🥺", "😳", "😮", "😠", "🥺", "👍", "😉", "😭", "✌️", "😉", "😊", "😅", "😮", "😴", "✨", "😩", "😖", "😔", "🥱", "😏", "🤔", "🥰", "😔", "😠", "👍", "❓", "✨", "🤩", "😠", "😴", "😉", "😌", "😒", "😤", "✍️", "🤔", "💰", "🤔", "😨", "👊", "😡", "🥰", "🤔", "😩", "😭", "👋", "🙏", "🚶", "🕰️", "🗑️"];
 
-    // Get all sticker containers on the page
+    // Get all sticker containers on the page (strict matching to avoid duplicates and cover image)
     const containers = Array.from(document.querySelectorAll('div')).filter(el => {
-        return el.className && el.className.includes('_container_') && el.querySelector('img') && el.querySelector('button');
+        const hasContainerClass = el.className && typeof el.className === 'string' && 
+                                  el.className.split(' ').some(c => c.startsWith('_container_'));
+        return hasContainerClass && 
+               el.querySelector('img') && 
+               el.querySelector('button') && 
+               el.querySelector('[data-art-type="sticker"]');
     });
 
     console.log(`%cFound ${containers.length} sticker containers in Signal Creator. Target emojis count: ${emojis.length}`, 'color: #00ff00; font-weight: bold;');
