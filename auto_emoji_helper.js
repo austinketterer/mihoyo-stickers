@@ -16,6 +16,9 @@
 (async () => {
     const delay = ms => new Promise(res => setTimeout(res, ms));
 
+    // Wait 500ms initially to let the Electron environment settle after paste
+    await delay(500);
+
     // CHANGE THIS NUMBER if you dragged from a file other than 0!
     const offset = 0; 
 
