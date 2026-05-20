@@ -16,6 +16,10 @@
 (async () => {
     const delay = ms => new Promise(res => setTimeout(res, ms));
 
+    // CHANGE THIS NUMBER if you dragged from a file other than 0!
+    // (e.g. if the first sticker shown on screen is 81_..., set this to 81)
+    const offset = 0; 
+
     // Hardcoded emoji list matching the folder's files in order
     const emojis = ["😠", "😫", "😎", "🎨", "👍", "🤔", "😎", "🔥", "😰", "😄", "😡", "🧑‍🍳", "🤔", "😩", "🤔", "😮", "👍", "😤", "😊", "😊", "😭", "😏", "😊", "😉", "😋", "🥳", "🎶", "😩", "😭", "📸", "💡", "😴", "🥰", "👋", "🤑", "🥳", " exasperated", "🥺", "🤩", "🦋", "😜", "🎶", "😡", "🤔", "😁", "🕯️", "😉", "😏", "🤔", "😔", "😉", "😟", "😴", "😎", "😭", "🥰", "😉", "🤨", "😊", "😉", "😊", "🧐", "😩", "😤", "😏", "🥰", "😄", "😮", "😮", "😠", "🥺", "😻", "🤔", "😊", "😅", "😋", "😭", "😊", "😳", "🤔", "😭", "💪", "😴", "😮", "😢", "👋", "🤫", "😡", "🤔", "😒", "😉", "😢", "😊", "😊", "😔", "😏", "😄", "😉", "😉", "🥰", "🥺", "😳", "😮", "😠", "🥺", "👍", "😉", "😭", "✌️", "😉", "😊", "😅", "😮", "😴", "✨", "😩", "😖", "😔", "🥱", "😏", "🤔", "🥰", "😔", "😠", "👍", "❓", "✨", "🤩", "😠", "😴", "😉", "😌", "😒", "😤", "✍️", "🤔", "💰", "🤔", "😨", "👊", "😡", "🥰", "🤔", "😩", "😭", "👋", "🙏", "🚶", "🕰️", "🗑️"];
 
@@ -31,14 +35,7 @@
         return;
     }
 
-    // Ask user for the offset (the prefix of the first sticker shown)
-    const firstStickerNum = prompt("Look at your first sticker in the list. What is its prefix number (e.g. 81)?", "81");
-    if (firstStickerNum === null) {
-        console.log("Cancelled.");
-        return;
-    }
-    const offset = parseInt(firstStickerNum, 10);
-    if (isNaN(offset) || offset < 0 || offset >= emojis.length) {
+    if (offset < 0 || offset >= emojis.length) {
         console.error("Invalid offset entered. It must be between 0 and " + (emojis.length - 1));
         return;
     }
@@ -97,7 +94,7 @@
             if (searchInput) {
                 searchInput.value = emoji;
                 searchInput.dispatchEvent(new Event('input', { bubbles: true }));
-                await delay(350); // Generous delay for search results to load
+                await delay(350); // Let search results load
 
                 // Click first result
                 const firstResult = document.querySelector('[role="option"], .emoji-button, button[class*="emoji"]');
@@ -113,7 +110,7 @@
             closePicker();
         }
 
-        await delay(250); // Generous pause between stickers to avoid rate limit/glitch
+        await delay(250); // Generous pause between stickers
     }
 
     console.log("%cAuto-mapping completed!", "color: #00ff00; font-weight: bold; font-size: 14px;");
